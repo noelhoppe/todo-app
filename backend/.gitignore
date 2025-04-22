@@ -1,0 +1,35 @@
+# Virtuelle Umgebungen
+.venv/
+venv/
+env/
+
+# Bytecode-Dateien und pycache
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Editor-spezifische Ordner
+.vscode/
+.idea/
+
+# Log-Dateien
+*.log
+
+# SQLite-Datenbanken (falls verwendet)
+*.db
+
+# Umgebungsvariablen-Dateien
+.env
+.env.local
+.env.*.local
+
+# macOS-spezifische Dateien
+.DS_Store
+
+# Temporäre Dateien von Texteditoren
+*~
+*.swp
+
+# Migrationen oder alembic (optional)
+alembic.ini
+migrations/
