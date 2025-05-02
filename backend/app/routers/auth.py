@@ -18,13 +18,15 @@ from app.core.config import settings
 from app.core.security import authenticate_user, create_access_token, hash_password
 from app.crud.user import get_user, insert_user
 
-router = APIRouter()
+router = APIRouter(
+  tags=["user"]
+)
 
 @router.post(
     path="/login/",
     status_code=status.HTTP_200_OK,
 )
-async def login(
+async def login_user(
   response: Response,
   form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
   db_session: DatabaseSessionDep
@@ -33,7 +35,7 @@ async def login(
   if not user:
     raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Incorrect username order password",
+      detail="Incorrect username or password",
       headers={"WWW-Authenticate": "Bearer"}
     )
   access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
@@ -46,10 +48,14 @@ async def login(
     value=access_token,
     expires=access_token_expires * 60
   )
+  return {"message": "Login successfull"}
 
 
-@router.post("/register/")
-async def createUser(
+@router.post(
+    path="/register/",
+    status_code=status.HTTP_201_CREATED,
+)
+async def register_user(
   form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
   db_session: DatabaseSessionDep
 ):
@@ -61,3 +67,4 @@ async def createUser(
     )
   hashed_passwort = hash_password(plain_password=form_data.password)
   insert_user(username=form_data.username, hashed_password=hashed_passwort, db_session=db_session)
+  return {"message": "Registration successful"}

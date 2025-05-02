@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.db import create_tables
-from app.routers.auth import router as auth_router
+from app.routers.auth import router as auth
+from app.routers.todo import router as todo
 
 app = FastAPI()
 
@@ -22,4 +23,5 @@ app.add_middleware(
 )
 
 # Register routers
-app.include_router(auth_router)  
+app.include_router(auth)  
+app.include_router(todo)
