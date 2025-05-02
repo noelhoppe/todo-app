@@ -7,16 +7,15 @@ It also provides a utility function to create tables in the database based on th
 Functions:
     - create_tables: Creates all tables defined in the models if they don't exist.
 """
+from sqlalchemy import create_engine, MetaData
 
+from app.core.config import settings
 
-from sqlmodel import create_engine, SQLModel, Session
-from fastapi import Depends
-from typing import Annotated
-
-from ..core.config import settings
-# Create the engine - connect to the PostgreSQL database
+# Establishing databse Connectivity
 engine = create_engine(settings.database_url, echo=True) 
+
+metadata = MetaData()
 
 def create_tables():
   """ Create tables in the database if they don't exist """
-  SQLModel.metadata.create_all(engine)
+  metadata.create_all(engine)

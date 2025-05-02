@@ -11,10 +11,10 @@ Functions:
 
 
 from typing import Annotated
-from sqlmodel import Session
+from sqlalchemy.orm import Session
 from fastapi import Depends
 
-from .db import engine
+from app.core.db import engine
 
 def get_session():
   """ Dependency function to get a database session """
