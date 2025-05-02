@@ -10,7 +10,7 @@ This module defines endpoints related to:
 from datetime import timedelta
 from fastapi import APIRouter, Depends, Response, HTTPException, status
 from typing import Annotated
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import DatabaseSessionDep

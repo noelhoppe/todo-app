@@ -5,10 +5,12 @@ These models define the shape of data accepted from and returned to the client.
 """
 
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 
-class ToDo(BaseModel):
-  id: str
+class ToDoIn(BaseModel):
   title: str
-  due_to: datetime
-  is_done: bool
+  due_to: datetime = datetime.now(timezone.utc)
+  is_done: bool = False
+
+class ToDoOut(ToDoIn):
+  id: int

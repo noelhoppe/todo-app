@@ -18,7 +18,8 @@ Functions:
 
 from typing import Annotated
 from sqlalchemy.orm import Session
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from datetime import timedelta, datetime, timezone
 from typing import Union, Literal
 from cryptography.hazmat.primitives import hashes
@@ -45,30 +46,31 @@ def generate_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
 
 private_key, public_key = generate_key_pair()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/")
 
-def sign(message: bytes, private_key: RSAPrivateKey) -> bytes:
-  return private_key.sign(
-    data=message, 
-    padding=padding.PSS(
-      mgf=padding.MGF1(hashes.SHA256()),
-      salt_length=padding.PSS.MAX_LENGTH
-    ),
-    algorithm=hashes.SHA256
-  )
+# def sign(message: bytes, private_key: RSAPrivateKey) -> bytes:
+#   return private_key.sign(
+#     data=message, 
+#     padding=padding.PSS(
+#       mgf=padding.MGF1(hashes.SHA256()),
+#       salt_length=padding.PSS.MAX_LENGTH
+#     ),
+#     algorithm=hashes.SHA256
+#   )
 
-def verify(signature: bytes, message: bytes, public_key: RSAPublicKey) -> bool:
-  try:
-    public_key.verify(
-      signature=signature, 
-      data=message,
-      padding=padding.PSS(
-        mgf=padding.MGF1(hashes.SHA256()),
-        salt_length=padding.PSS.MAX_LENGTH
-      )
-    )
-    return True
-  except InvalidSignature:
-    return False
+# def verify(signature: bytes, message: bytes, public_key: RSAPublicKey) -> bool:
+#   try:
+#     public_key.verify(
+#       signature=signature, 
+#       data=message,
+#       padding=padding.PSS(
+#         mgf=padding.MGF1(hashes.SHA256()),
+#         salt_length=padding.PSS.MAX_LENGTH
+#       )
+#     )
+#     return True
+#   except InvalidSignature:
+#     return False
   
 def verify_password(plain_password: str, hashed_password: str) -> bool:
   return pwd_context.verify(
@@ -97,6 +99,43 @@ def create_access_token(data: dict, expires_delta: timedelta | None) -> str:
   encoded_jwt = jwt.encode(
     payload=to_encode,
     key=private_key,
-    algorithm="RS256"
+    algorithm=settings.algorithm
   )
   return encoded_jwt
+
+def validate_access_token(token: str) -> dict[str, str]:
+  try:
+    payload = jwt.decode(
+      jwt=token,
+      key=public_key,
+      algorithms=settings.algorithm,
+      options={
+        "verify_signature": True,
+        "verify_exp": "verify_signature",
+      }
+    )
+    return payload
+  except jwt.exceptions.InvalidTokenError:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid token",
+      headers={"WWW-Authenticate": "Bearer"}
+    )
+  except jwt.exceptions.ExpiredSignatureError:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Access token expired",
+      headers={"WWW-Authenticate": "Bearer"}
+    )
+  except jwt.exceptions.DecodeError:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Access token cannot be decoded because it failed validation",
+      headers={"WWW-Authenticate": "Bearer"}
+    )
+  except jwt.exceptions.InvalidSignatureError:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="The token's signature doesn't match the one provided as part of the token",
+      headers={"WWW-Authenticate": "Bearer"}
+    )

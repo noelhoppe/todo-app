@@ -14,6 +14,8 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 from fastapi import Depends
 
+from app.core.security import oauth2_scheme
+
 from app.core.db import engine
 
 def get_session():
@@ -23,3 +25,5 @@ def get_session():
 
 # Annotate the database session dependency
 DatabaseSessionDep = Annotated[Session, Depends(get_session)]
+
+OAuth2PasswordBearerDep = Annotated[str, Depends(oauth2_scheme)]

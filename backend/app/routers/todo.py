@@ -10,23 +10,41 @@ This module contains endpoints for:
 These routes require an authenticated user and interact with the database through dependencies.
 
 """
+from typing import Annotated
 
-
-from fastapi import status
+from fastapi import status, Cookie, HTTPException, Depends
 from fastapi.routing import APIRouter
+
+from app.schemas.todo import ToDoIn, ToDoOut
+from app.core.security import validate_access_token, oauth2_scheme
+from app.models.todo import ToDo
+from app.crud.user import get_user
+from app.core.dependencies import DatabaseSessionDep, OAuth2PasswordBearerDep
+from app.crud.todo import insert_todo
+
 
 router = APIRouter(
   tags=["todo"],
-  prefix="/todos"
+  prefix="/todos",
+  dependencies=[Depends(oauth2_scheme)]
 )
 
 @router.post(
   path="/",
   status_code=status.HTTP_201_CREATED
 )
-async def create_todo():
-  return {"message": "ToDo created"}
+async def handle_create_todo(todo: ToDoIn, db_session: DatabaseSessionDep, access_token: OAuth2PasswordBearerDep) -> ToDoOut:
 
+  payload = validate_access_token(access_token)
+  username = payload["sub"]
+  user = get_user(username, db_session)
+  if not user:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid authentication credentials: user not found"
+    )
+  todo = insert_todo(todo, user.id, db_session)
+  return todo
 
 @router.get(
     path="/",
