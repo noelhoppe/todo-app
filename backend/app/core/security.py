@@ -1,38 +1,16 @@
-"""
-Security utilities for authentication and authorization.
 
-This module provides utilities for password hashing, token creation, and token validation.
-It is responsible for the security mechanisms, including:
-- Password hashing and verification
-- JWT token creation and validation
-- Managing user authentication and authorization
-
-These utilities are used across the application for secure user authentication.
-
-Functions:
-    - verify_password: Verifies if the plain password matches the hashed password.
-    - get_password_hash: Hashes the plain password using bcrypt.
-    - create_access_token: Creates a JWT token for user authentication.
-    - get_current_user: Extracts the current authenticated user from the JWT token.
-"""
-
-from typing import Annotated
-from sqlalchemy.orm import Session
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, Request, Response, status
 from datetime import timedelta, datetime, timezone
 from typing import Union, Literal
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
-from cryptography.exceptions import InvalidSignature
 import jwt
 from passlib.context import CryptContext
 
 from app.crud.user import get_user
-from app.core.dependencies import get_session
 from app.models.user import User
 from app.core.config import settings
+from app.core.dependencies import DatabaseSessionDep
 
 def generate_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
   public_exponent = 65537
@@ -46,8 +24,8 @@ def generate_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
 
 private_key, public_key = generate_key_pair()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/")
 
+# TODO: Schlüssel aus Datei abrufen
 # def sign(message: bytes, private_key: RSAPrivateKey) -> bytes:
 #   return private_key.sign(
 #     data=message, 
@@ -73,15 +51,24 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/")
 #     return False
   
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-  return pwd_context.verify(
-    secret=plain_password,
-    hash=hashed_password,
-  )
+  try:
+    return pwd_context.verify(
+      secret=plain_password,
+      hash=hashed_password,
+    )
+  except (ValueError, TypeError):
+    return False
 
 def hash_password(plain_password: str) -> str:
-  return pwd_context.hash(secret=plain_password)
+  try:
+    return pwd_context.hash(secret=plain_password)
+  except (ValueError, TypeError) as e:
+    raise HTTPException(
+      status_code=status.HTTP_400_BAD_REQUEST,
+      detail="Invalid passwort format"
+    ) from e
 
-def authenticate_user(username: str, password: str, db_session: Annotated[Session, Depends(get_session)]) -> Union[Literal[False], User]:
+def authenticate_user(username: str, password: str, db_session: DatabaseSessionDep) -> Union[Literal[False], User]:
   user = get_user(username=username, db_session=db_session)
   if not user:
     return False
@@ -89,13 +76,10 @@ def authenticate_user(username: str, password: str, db_session: Annotated[Sessio
     return False
   return user
 
-def create_access_token(data: dict, expires_delta: timedelta | None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=15)) -> str:
   to_encode = data.copy()
-  if expires_delta:
-    expire = datetime.now(timezone.utc) + expires_delta
-  else:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-  to_encode.update({"exp": expire})
+  expires = datetime.now(timezone.utc) + expires_delta
+  to_encode.update({"exp": expires})
   encoded_jwt = jwt.encode(
     payload=to_encode,
     key=private_key,
@@ -139,3 +123,35 @@ def validate_access_token(token: str) -> dict[str, str]:
       detail="The token's signature doesn't match the one provided as part of the token",
       headers={"WWW-Authenticate": "Bearer"}
     )
+  
+ACCESS_TOKEN_COOKIE_KEY = "access_token"
+
+def set_access_token_in_cookie(
+    response: Response, 
+    token: str,
+    expire_delta: timedelta = timedelta(minutes=15)
+) -> None:
+  response.set_cookie(
+    key=ACCESS_TOKEN_COOKIE_KEY,
+    value=token,
+    max_age=int(expire_delta.total_seconds())
+  )
+
+def get_access_token_from_cookie(request: Request) -> str:
+  token = request.cookies.get(ACCESS_TOKEN_COOKIE_KEY)
+  if not token:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Access token in Cookie not found"
+    )
+  return token
+
+def destroy_access_token_cookie(request: Request) -> None:
+  try:
+    request.cookies.pop(ACCESS_TOKEN_COOKIE_KEY)
+  except KeyError:
+    raise HTTPException(
+      status_code=status.HTTP_400_BAD_REQUEST,
+      detail="No valid session cookie found. Please log in again"
+    )
+  

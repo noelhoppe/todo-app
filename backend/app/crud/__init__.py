@@ -1,1 +1,0 @@
-""" Contains Create, Read, Update, Delete (CRUD) operations for interacting with the database """

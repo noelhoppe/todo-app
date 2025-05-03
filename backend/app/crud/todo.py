@@ -1,6 +1,3 @@
-""" CRUD operations for 'ToDo' model """
-
-
 from app.models.todo import ToDo as ToDoModel
 from app.schemas.todo import ToDoIn, ToDoOut
 from sqlalchemy.orm import Session
@@ -14,5 +11,5 @@ def insert_todo(todo: ToDoIn, user_id: int, db_session: Session) -> ToDoOut:
   )
   db_session.add(new_todo)
   db_session.commit()
-  db_session.refresh()
+  db_session.refresh(new_todo)
   return new_todo

@@ -1,21 +1,12 @@
-"""
-Authentication and user login routes.
-
-This module defines endpoints related to:
-- user login (POST /login/)
-- user logout (POST /logout)
-- user registration (POST /register)
-"""
-
 from datetime import timedelta
-from fastapi import APIRouter, Depends, Response, HTTPException, status
+from fastapi import APIRouter, Depends, Request, Response, HTTPException, status
 from typing import Annotated
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import DatabaseSessionDep
 from app.core.config import settings
-from app.core.security import authenticate_user, create_access_token, hash_password
+from app.core.security import authenticate_user, create_access_token, destroy_access_token_cookie, hash_password, set_access_token_in_cookie
 from app.crud.user import get_user, insert_user
 
 router = APIRouter(
@@ -41,15 +32,10 @@ async def login_user(
   access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
   access_token = create_access_token(
     data={"sub": user.username},
-    expires_delta=timedelta(5)
+    expires_delta=access_token_expires
   )
-  response.set_cookie(
-    key="access_token",
-    value=access_token,
-    expires=access_token_expires * 60
-  )
+  set_access_token_in_cookie(response, access_token, access_token_expires)
   return {"message": "Login successfull"}
-
 
 @router.post(
     path="/register/",
@@ -68,3 +54,11 @@ async def register_user(
   hashed_passwort = hash_password(plain_password=form_data.password)
   insert_user(username=form_data.username, hashed_password=hashed_passwort, db_session=db_session)
   return {"message": "Registration successful"}
+
+@router.post(
+  path="/logout/",
+  status_code=status.HTTP_200_OK
+)
+async def logout_user(request: Request):
+  destroy_access_token_cookie(request)
+  return {"message": "Logout successfull"}

@@ -1,15 +1,3 @@
-"""
-Database model for the User entity.
-
-This model defines the structure of the 'users' table in the database.
-It includes authentication-relevant fields and is used for DB operations.
-
-Attributes:
-    id (int): Primary key, auto-generated.
-    username (str): Unique username of the user.
-    hashed_password (str): Hashed password for authentication.
-"""
-
 from sqlalchemy import Column, Integer, String
 
 from app.core import db
