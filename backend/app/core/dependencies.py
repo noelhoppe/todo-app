@@ -4,6 +4,9 @@ from sqlalchemy.orm import Session
 from fastapi import Depends
 
 from app.core.db import engine
+from app.models.user import User
+from app.core.security import get_current_user
+
 
 def get_session():
   """ Dependency function to get a database session """
@@ -11,6 +14,4 @@ def get_session():
     yield session
 
 DatabaseSessionDep = Annotated[Session, Depends(get_session)]
-
-from app.core.security import get_access_token_from_cookie
-AccessTokenFromCookie = Annotated[str, Depends(get_access_token_from_cookie)]
+GetCurrentUser = Annotated[User, Depends(get_current_user)]

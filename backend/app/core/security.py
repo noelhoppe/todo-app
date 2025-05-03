@@ -1,16 +1,16 @@
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, Response, status
 from datetime import timedelta, datetime, timezone
-from typing import Union, Literal
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 import jwt
 from passlib.context import CryptContext
+from sqlmodel import Session
 
 from app.crud.user import get_user
 from app.models.user import User
 from app.core.config import settings
-from app.core.dependencies import DatabaseSessionDep
 
 def generate_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
   public_exponent = 65537
@@ -49,7 +49,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 #     return True
 #   except InvalidSignature:
 #     return False
-  
+
+# --- Password hashing 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
   try:
     return pwd_context.verify(
@@ -68,14 +69,17 @@ def hash_password(plain_password: str) -> str:
       detail="Invalid passwort format"
     ) from e
 
-def authenticate_user(username: str, password: str, db_session: DatabaseSessionDep) -> Union[Literal[False], User]:
+# -- Active authentification (login)
+def authenticate_user(username: str, password: str, db_session: Session) -> User:
   user = get_user(username=username, db_session=db_session)
-  if not user:
-    return False
-  if not verify_password(password, user.hashed_password):
-    return False
+  if not user or not verify_password(password, user.hashed_password):
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Username or password is wrong"
+    )
   return user
 
+# --- JWT Access Token handling
 def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=15)) -> str:
   to_encode = data.copy()
   expires = datetime.now(timezone.utc) + expires_delta
@@ -123,7 +127,8 @@ def validate_access_token(token: str) -> dict[str, str]:
       detail="The token's signature doesn't match the one provided as part of the token",
       headers={"WWW-Authenticate": "Bearer"}
     )
-  
+
+# --- Cookie based JWT management
 ACCESS_TOKEN_COOKIE_KEY = "access_token"
 
 def set_access_token_in_cookie(
@@ -155,3 +160,14 @@ def destroy_access_token_cookie(request: Request) -> None:
       detail="No valid session cookie found. Please log in again"
     )
   
+# -- Passive authentication (Access Token)
+def get_current_user(db_session: Session, access_token: Annotated[str, Depends(get_access_token_from_cookie)]) -> User:
+  payload = validate_access_token(access_token)
+  username = payload["sub"]
+  user = get_user(username, db_session)
+  if not user:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid authentication credentials: user not found"
+    )
+  return user
