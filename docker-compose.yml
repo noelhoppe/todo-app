@@ -18,6 +18,9 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - PUBLIC_KEY_PATH=${PUBLIC_KEY_PATH}
+      - PRIVATE_KEY_PATH=${PRIVATE_KEY_PATH}
+      - PRIVATE_KEY_PASSWORD=${PRIVATE_KEY_PASSWORD}
     depends_on:
       - db                            
     volumes:

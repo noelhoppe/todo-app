@@ -1,6 +1,6 @@
 from sqlalchemy import select
-from fastapi import Depends
-from sqlmodel import Session
+from fastapi import Depends, HTTPException
+from sqlalchemy.orm import Session
 
 from app.models.user import User
 
