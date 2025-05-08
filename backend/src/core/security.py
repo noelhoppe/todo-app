@@ -5,88 +5,16 @@ from datetime import timedelta, datetime, timezone
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
+from fastapi.security import OAuth2PasswordRequestForm
 import jwt
 from passlib.context import CryptContext
+from sqlmodel import Session
 
+from src.core.db import DatabaseSessionDep
 from src.crud.user import get_user
 from src.models.user import User
 from src.core.config import settings
 
-# -- RSA key pair generation, saving and loading
-def generate_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
-  """
-  Generates a new RSA key pair with a public exponent of 65537 and a key size of 2048 bits.
-  The private key is used for signing JWT tokens, and the public key is used for verifying them.
-
-  :return: A tuple containing the private key and the public key
-  """
-  public_exponent = 65537
-  key_size = 2048
-  private_key = rsa.generate_private_key(
-    public_exponent=public_exponent,
-    key_size=key_size
-  )
-  public_key = private_key.public_key()
-  return private_key, public_key
-
-def get_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
-  """
-  Return the RSA key pair from files or generate a new RSA key pair, save it to files, and return it.
-
-  :return: A tuple containing the private key and public key
-  """
-  try:
-    private_key, public_key = load_key_pair()
-  except FileNotFoundError:
-    private_key, public_key = generate_key_pair()
-    save_key_pair(private_key, public_key)
-  return private_key, public_key
-
-def load_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
-  """
-  Loads the RSA key pair from files.
-
-  :return: A tuple containing the private key and public key
-  """
-  with open(settings.private_key_path, "rb") as private_key_file:
-    private_key = serialization.load_pem_private_key(
-      private_key_file.read(),
-      password=settings.private_key_password
-    )
-  with open(settings.public_key_path, "rb") as public_key_file:
-    public_key = serialization.load_pem_public_key(
-      public_key_file.read()
-    )
-  return private_key, public_key
-
-def save_key_pair(private_key: RSAPrivateKey, public_key: RSAPublicKey):
-  """
-  Saves the RSA key pair to files.
-
-  :param private_key: The private key to save
-  :param public_key: The public key to save
-  """
-  if not os.path.exists(os.path.dirname(settings.private_key_path)):
-    os.makedirs(os.path.dirname(settings.private_key_path))
-  with open(settings.private_key_path, "wb") as private_key_file:
-    private_key_file.write(
-      private_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.BestAvailableEncryption(settings.private_key_password)
-      )
-    )
-  if not os.path.exists(os.path.dirname(settings.public_key_path)):
-    os.makedirs(os.path.dirname(settings.public_key_path))
-  with open(settings.public_key_path, "wb") as public_key_file:
-    public_key_file.write(
-      public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
-      )
-    )
-
-private_key, public_key = get_key_pair()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # --- Password hashing 
@@ -122,9 +50,9 @@ def hash_password(plain_password: str) -> str:
       status_code=status.HTTP_400_BAD_REQUEST,
       detail="Password has an invalid type or value"
     ) from e
-
+  
 # -- Active authentification (login)
-def authenticate_user(username: str, plain_password: str) -> User:
+def authenticate_user(username: str, plain_password: str, db_session: Session) -> User:
   """
   Authenticate a user by checking the provided username and password.
 
@@ -135,7 +63,7 @@ def authenticate_user(username: str, plain_password: str) -> User:
   :return: The authenticated user
   :raises HTTPException: If the username or password is incorrect
   """
-  user = get_user(username=username)
+  user = get_user(username=username, db_session=db_session)
   if not user or not verify_password(plain_password, user.hashed_password):
     # Never reveal whetever the username or password is incorrect separately.
     # Otherwise, an attacker could use this information to brute-force the password.
@@ -145,6 +73,8 @@ def authenticate_user(username: str, plain_password: str) -> User:
     )
   return user
 
+SECRET_KEY = settings.secret_key
+ALGORITHM = settings.symmetric_algorithm
 # --- JWT Access Token handling
 def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=15)) -> str:
   to_encode = data.copy()
@@ -152,8 +82,8 @@ def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes
   to_encode.update({"exp": expires})
   encoded_jwt = jwt.encode(
     payload=to_encode,
-    key=private_key,
-    algorithm=settings.algorithm
+    key=SECRET_KEY,
+    algorithm=ALGORITHM
   )
   return encoded_jwt
 
@@ -161,11 +91,11 @@ def validate_access_token(token: str) -> dict[str, str]:
   try:
     payload = jwt.decode(
       jwt=token,
-      key=public_key,
-      algorithms=settings.algorithm,
+      key=SECRET_KEY,
+      algorithms=ALGORITHM,
       options={
         "verify_signature": True,
-        "verify_exp": "verify_signature",
+        "verify_exp": True,
       }
     )
     return payload
@@ -227,10 +157,13 @@ def destroy_access_token_cookie(request: Request) -> None:
     )
   
 # -- Passive authentication (Access Token)
-def get_current_user(access_token: Annotated[str, Depends(get_access_token_from_cookie)]) -> User:
+def get_current_user(
+  access_token: Annotated[str, Depends(get_access_token_from_cookie)],
+  db_session: DatabaseSessionDep
+) -> User:
   payload = validate_access_token(access_token)
   username = payload["sub"]
-  user = get_user(username)
+  user = get_user(username=username, db_session=db_session)
   if not user:
     raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,

@@ -1,6 +1,7 @@
 from fastapi import status
 from fastapi.routing import APIRouter
 
+from src.core.db import DatabaseSessionDep
 from src.schemas.todo import ToDoIn, ToDoOut
 from src.core.dependencies import GetCurrentUser
 from src.crud.todo import insert_todo
@@ -14,9 +15,9 @@ router = APIRouter(
   path="/",
   status_code=status.HTTP_201_CREATED
 )
-async def create_todo(todo: ToDoIn, user: GetCurrentUser):
+async def create_todo(todo: ToDoIn, user: GetCurrentUser, db_session: DatabaseSessionDep):
   # todo_out = ToDoOut(title=todo.title, due_to=todo.due_to, is_done=todo.is_done, id=2)
-  todo_model = insert_todo(todo, user.id)
+  todo_model = insert_todo(todo, user.id, db_session)
   return ToDoOut.model_validate(todo_model)
 
 # @router.get(
