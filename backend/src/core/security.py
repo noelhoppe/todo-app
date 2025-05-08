@@ -1,5 +1,4 @@
 from typing import Annotated
-
 import os
 from fastapi import Depends, HTTPException, Request, Response, status
 from datetime import timedelta, datetime, timezone
@@ -8,14 +7,19 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 import jwt
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
 
-from app.crud.user import get_user
-from app.models.user import User
-from app.core.config import settings
-from app.core.dependencies import DatabaseSessionDep
+from src.crud.user import get_user
+from src.models.user import User
+from src.core.config import settings
 
+# -- RSA key pair generation, saving and loading
 def generate_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
+  """
+  Generates a new RSA key pair with a public exponent of 65537 and a key size of 2048 bits.
+  The private key is used for signing JWT tokens, and the public key is used for verifying them.
+
+  :return: A tuple containing the private key and the public key
+  """
   public_exponent = 65537
   key_size = 2048
   private_key = rsa.generate_private_key(
@@ -26,6 +30,11 @@ def generate_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
   return private_key, public_key
 
 def get_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
+  """
+  Return the RSA key pair from files or generate a new RSA key pair, save it to files, and return it.
+
+  :return: A tuple containing the private key and public key
+  """
   try:
     private_key, public_key = load_key_pair()
   except FileNotFoundError:
@@ -34,6 +43,11 @@ def get_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
   return private_key, public_key
 
 def load_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
+  """
+  Loads the RSA key pair from files.
+
+  :return: A tuple containing the private key and public key
+  """
   with open(settings.private_key_path, "rb") as private_key_file:
     private_key = serialization.load_pem_private_key(
       private_key_file.read(),
@@ -46,6 +60,12 @@ def load_key_pair() -> tuple[RSAPrivateKey, RSAPublicKey]:
   return private_key, public_key
 
 def save_key_pair(private_key: RSAPrivateKey, public_key: RSAPublicKey):
+  """
+  Saves the RSA key pair to files.
+
+  :param private_key: The private key to save
+  :param public_key: The public key to save
+  """
   if not os.path.exists(os.path.dirname(settings.private_key_path)):
     os.makedirs(os.path.dirname(settings.private_key_path))
   with open(settings.private_key_path, "wb") as private_key_file:
@@ -65,7 +85,6 @@ def save_key_pair(private_key: RSAPrivateKey, public_key: RSAPublicKey):
         format=serialization.PublicFormat.SubjectPublicKeyInfo
       )
     )
-
 
 private_key, public_key = get_key_pair()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -105,7 +124,7 @@ def hash_password(plain_password: str) -> str:
     ) from e
 
 # -- Active authentification (login)
-def authenticate_user(username: str, plain_password: str, db_session: Session) -> User:
+def authenticate_user(username: str, plain_password: str) -> User:
   """
   Authenticate a user by checking the provided username and password.
 
@@ -116,7 +135,7 @@ def authenticate_user(username: str, plain_password: str, db_session: Session) -
   :return: The authenticated user
   :raises HTTPException: If the username or password is incorrect
   """
-  user = get_user(username=username, db_session=db_session)
+  user = get_user(username=username)
   if not user or not verify_password(plain_password, user.hashed_password):
     # Never reveal whetever the username or password is incorrect separately.
     # Otherwise, an attacker could use this information to brute-force the password.
@@ -208,10 +227,10 @@ def destroy_access_token_cookie(request: Request) -> None:
     )
   
 # -- Passive authentication (Access Token)
-def get_current_user(db_session: DatabaseSessionDep, access_token: Annotated[str, Depends(get_access_token_from_cookie)]) -> User:
+def get_current_user(access_token: Annotated[str, Depends(get_access_token_from_cookie)]) -> User:
   payload = validate_access_token(access_token)
   username = payload["sub"]
-  user = get_user(username, db_session)
+  user = get_user(username)
   if not user:
     raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,

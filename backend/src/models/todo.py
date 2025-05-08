@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
 
-from app.core import db
+from src.core import db
 
 class ToDo(db.Base):
   __tablename__ = "todos"

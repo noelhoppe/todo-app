@@ -1,5 +1,5 @@
-from pydantic import BaseModel, ConfigDict
-from datetime import datetime, timezone
+from pydantic import BaseModel
+from datetime import datetime
 
 class ToDoIn(BaseModel):
   title: str

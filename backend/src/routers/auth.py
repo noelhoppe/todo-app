@@ -3,10 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request, Response, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.core.dependencies import DatabaseSessionDep
-from app.core.config import settings
-from app.core.security import authenticate_user, create_access_token, destroy_access_token_cookie, hash_password, set_access_token_in_cookie
-from app.crud.user import get_user, insert_user
+from src.core.config import settings
+from src.core.security import authenticate_user, create_access_token, destroy_access_token_cookie, hash_password, set_access_token_in_cookie
+from src.crud.user import get_user, insert_user
 
 router = APIRouter(
   tags=["user"]
@@ -19,9 +18,8 @@ router = APIRouter(
 async def login_user(
   response: Response,
   form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-  db_session: DatabaseSessionDep
 ):
-  user = authenticate_user(form_data.username, form_data.password, db_session)
+  user = authenticate_user(form_data.username, form_data.password)
   access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
   access_token = create_access_token(
     data={"sub": user.username},
@@ -36,16 +34,15 @@ async def login_user(
 )
 async def register_user(
   form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-  db_session: DatabaseSessionDep
 ):
-  user = get_user(form_data.username, db_session=db_session)
+  user = get_user(form_data.username)
   if user:
     raise HTTPException(
       status_code=status.HTTP_409_CONFLICT,
       detail=f"User with username {user.username} already exists. Please enter another username"
     )
   hashed_passwort = hash_password(plain_password=form_data.password)
-  insert_user(username=form_data.username, hashed_password=hashed_passwort, db_session=db_session)
+  insert_user(username=form_data.username, hashed_password=hashed_passwort)
   return {"message": "Registration successful"}
 
 @router.post(

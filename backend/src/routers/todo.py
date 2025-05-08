@@ -1,12 +1,9 @@
-from fastapi import status, Cookie, HTTPException, Depends
+from fastapi import status
 from fastapi.routing import APIRouter
 
-from app.schemas.todo import ToDoIn, ToDoOut
-from app.models.todo import ToDo as ToDoModel
-from app.core.security import validate_access_token
-from app.crud.user import get_user
-from app.core.dependencies import DatabaseSessionDep, GetCurrentUser
-from app.crud.todo import insert_todo
+from src.schemas.todo import ToDoIn, ToDoOut
+from src.core.dependencies import GetCurrentUser
+from src.crud.todo import insert_todo
 
 router = APIRouter(
   tags=["todo"],
@@ -17,9 +14,9 @@ router = APIRouter(
   path="/",
   status_code=status.HTTP_201_CREATED
 )
-async def create_todo(todo: ToDoIn, user: GetCurrentUser, db_session: DatabaseSessionDep):
+async def create_todo(todo: ToDoIn, user: GetCurrentUser):
   # todo_out = ToDoOut(title=todo.title, due_to=todo.due_to, is_done=todo.is_done, id=2)
-  todo_model = insert_todo(todo, user.id, db_session)
+  todo_model = insert_todo(todo, user.id)
   return ToDoOut.model_validate(todo_model)
 
 # @router.get(
