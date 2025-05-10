@@ -11,7 +11,7 @@ from passlib.context import CryptContext
 from sqlmodel import Session
 
 from src.core.db import DatabaseSessionDep
-from src.crud.user import get_user
+from src.crud.user import get_user, get_user_by_id
 from src.models.user import User
 from src.core.config import settings
 
@@ -204,8 +204,8 @@ def get_current_user(
   :raises HTTPException: If the user is not found.
   """
   payload = validate_access_token(access_token)
-  username = payload["sub"]
-  user = get_user(username=username, db_session=db_session)
+  user_id = payload["sub"]
+  user = get_user_by_id(user_id=user_id, db_session=db_session)
   if not user:
     raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,

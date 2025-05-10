@@ -24,7 +24,7 @@ async def login_user(
   user = authenticate_user(form_data.username, form_data.password, db_session)
   access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
   access_token = create_access_token(
-    data={"sub": user.username},
+    data={"sub": user.id},
     expires_delta=access_token_expires
   )
   set_access_token_in_cookie(response, access_token, access_token_expires)
