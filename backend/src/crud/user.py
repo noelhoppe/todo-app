@@ -12,6 +12,7 @@ def get_user(username: str, db_session: Session) -> User | None:
   return result
 
 def insert_user(username: str, hashed_password: str, db_session: Session) -> None:
+  """ INSERT (username, hashed_password) INTO users VALUES(username, hashed_password) """
   user = User(username=username, hashed_password=hashed_password)
   db_session.add(user)
   db_session.commit()
