@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request, Response, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
+from src.core.dependencies import GetCurrentUser
 from src.core.db import DatabaseSessionDep
 from src.core.config import settings
 from src.core.security import authenticate_user, create_access_token, destroy_access_token_cookie, hash_password, set_access_token_in_cookie
@@ -24,11 +25,21 @@ async def login_user(
   user = authenticate_user(form_data.username, form_data.password, db_session)
   access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
   access_token = create_access_token(
-    data={"sub": user.id},
+    data={"sub": str(user.id)},
     expires_delta=access_token_expires
   )
   set_access_token_in_cookie(response, access_token, access_token_expires)
   return {"message": "Login successfull"}
+
+@router.get(
+    path="/isAuthorized/",
+    status_code=status.HTTP_200_OK
+)
+async def is_authorized(
+  user: GetCurrentUser
+):
+  return {"message": "User is authenticated"}
+
 
 @router.post(
     path="/register/",

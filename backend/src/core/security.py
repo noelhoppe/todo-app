@@ -85,19 +85,13 @@ def validate_access_token(token: str) -> dict[str, str]:
     payload = jwt.decode(
       jwt=token,
       key=SECRET_KEY,
-      algorithms=ALGORITHM,
+      algorithms=[ALGORITHM],
       options={
         "verify_signature": True,
         "verify_exp": True,
       }
     )
     return payload
-  except jwt.exceptions.InvalidTokenError:
-    raise HTTPException(
-      status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Invalid token",
-      headers={"WWW-Authenticate": "Bearer"}
-    )
   except jwt.exceptions.ExpiredSignatureError:
     raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,
@@ -114,6 +108,12 @@ def validate_access_token(token: str) -> dict[str, str]:
     raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,
       detail="The token's signature doesn't match the one provided as part of the token",
+      headers={"WWW-Authenticate": "Bearer"}
+    )
+  except jwt.exceptions.InvalidTokenError:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid token",
       headers={"WWW-Authenticate": "Bearer"}
     )
 
@@ -135,8 +135,8 @@ def set_access_token_in_cookie(
     key=ACCESS_TOKEN_COOKIE_KEY,
     value=token,
     httponly=True, # prevents reading or manipulating cookie using document.cookie with javascript in frontend to avoid XSS-attacks
-    # note: use secure=True in production environment to ensure that the cookie is only send via https to avoid MID-attacks
-    samesite="strict", # cookie is sent only to same domain that sets cookie to avoid CSRD-attacks
+    # note: use secure=True in production environment to ensure that the cookie is only send via https to avoid MITM-attacks
+    samesite="strict", # cookie is sent only to same domain that sets cookie to avoid CSRF-attacks
     max_age=int(expire_delta.total_seconds())
   )
 
@@ -207,7 +207,7 @@ def get_current_user(
   :raises HTTPException: If the user is not found.
   """
   payload = validate_access_token(access_token)
-  user_id = payload["sub"]
+  user_id = int(payload["sub"])
   user = get_user_by_id(user_id=user_id, db_session=db_session)
   if not user:
     raise HTTPException(
