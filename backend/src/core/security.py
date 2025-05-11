@@ -134,6 +134,9 @@ def set_access_token_in_cookie(
   response.set_cookie(
     key=ACCESS_TOKEN_COOKIE_KEY,
     value=token,
+    httponly=True, # prevents reading or manipulating cookie using document.cookie with javascript in frontend to avoid XSS-attacks
+    # note: use secure=True in production environment to ensure that the cookie is only send via https to avoid MID-attacks
+    samesite="strict", # cookie is sent only to same domain that sets cookie to avoid CSRD-attacks
     max_age=int(expire_delta.total_seconds())
   )
 
