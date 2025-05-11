@@ -23,7 +23,7 @@ async function fetchLogin(credentials: LoginRequest): Promise<LoginSuccess> {
         errorMessage = loginFailureData.detail || errorMessage;
       }
       catch(error) {
-        errorMessage = "Error parsing error response."
+        errorMessage = "Error parsing error response (POST /login)."
       }
       throw new Error(errorMessage);
     }
@@ -33,7 +33,7 @@ async function fetchLogin(credentials: LoginRequest): Promise<LoginSuccess> {
       const loginSuccessData: LoginSuccess = await res.json()
       return loginSuccessData;
     } catch(error) {
-        throw new Error("Error parsing successfull login reponse.")
+        throw new Error("Error parsing successfull login reponse (POST /login).")
     }
 
   } catch(error) {
@@ -44,6 +44,41 @@ async function fetchLogin(credentials: LoginRequest): Promise<LoginSuccess> {
   }
 }
 
-export {
-  fetchLogin
+async function fetchIsAuthorized() {
+  const ENDPOINT = `${import.meta.env.VITE_API_URL}/isAuthorized/`;
+  const requestInit: RequestInit = {
+    credentials: "include",
+    method: "GET",
+    mode: "cors",
+  };
+  try {
+    const res = await fetch(ENDPOINT, requestInit) // error
+    if (!res.ok) {
+      let errorMessage = "Unknwon Error";
+      try {
+        const errorResponseData: LoginFailure = await res.json();
+        errorMessage = errorResponseData.detail || errorMessage;
+      } catch(error) {
+        errorMessage = "Error parsing error reponse (GET /isAuthorized).";
+      }
+      throw new Error(errorMessage);
+    }
+
+    try {
+      const successfullResponseData: LoginSuccess = await res.json();
+      return successfullResponseData;
+    } catch(error) {
+      throw new Error("Error parsing successfull response (GET /isAuthorized).")
+    }
+  } catch(error) {
+    if (error instanceof Error) {
+      throw new Error(`Authetication failed: ${error.message}`);
+    }
+    throw new Error("An unexpected error occured");
+  }
 }
+
+export {
+  fetchLogin,
+  fetchIsAuthorized
+};

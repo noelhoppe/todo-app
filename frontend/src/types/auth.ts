@@ -18,6 +18,7 @@ type LoginResponse = LoginSuccess | LoginFailure;
 // --- CONTEXT
 type AuthContext = {
   login: (credentials: LoginRequest) => Promise<LoginSuccess>;
+  isAuthenticated: () => Promise<boolean>;
 }
 
 export type {
