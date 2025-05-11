@@ -1,20 +1,23 @@
 import { 
   Typography,
   TextField,
-  Button
+  Button,
+  InputAdornment,
+  IconButton
 } from "@mui/material";
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import * as Styles from "./Login.styles"
 import useAuth from "../../hooks/useAuth";
 import { useState } from "react";
 import { LoginRequest } from "../../types/auth";
 
 function Login() {
-  // const [username, setUsername] = useState<string|null>(null);
-  // const [password, setPassword] = useState<string|null>(null);
   const [credentials, setCredentials] = useState<LoginRequest>({
     username: "",
     password: ""
   });
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   // const [error, setError] = useState<string|null>(null);
   const { login } = useAuth()
 
@@ -35,6 +38,7 @@ function Login() {
           label="Username"
           variant="filled"
           required={true}
+          autoFocus={true}
           type="text"
           fullWidth={true}
           margin="dense"
@@ -48,7 +52,8 @@ function Login() {
           }}
           // helperText={error}
           // error={error ? true : false}
-        />
+        >
+        </TextField>
         <TextField 
           // TODO: Toggling password visibility with icon
           // TODO: using password icon
@@ -56,10 +61,19 @@ function Login() {
           label="Password"
           variant="filled"
           required={true}
-          type="password"
+          type={showPassword ? "text": "password"}
           fullWidth={true}
           margin="dense"
           // TODO: UI error handling
+          slotProps={{
+            input: {
+              endAdornment: (
+                <IconButton onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}
+                </IconButton>
+              )
+            }
+          }}
           onChange={(evt) => {
             setCredentials((prev) => ({
               ...prev, 
