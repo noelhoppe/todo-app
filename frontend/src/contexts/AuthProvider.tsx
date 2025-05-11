@@ -1,12 +1,11 @@
 import { createContext } from "react";
 import { fetchLogin } from "../services/auth";
-import type  { AuthContext as AuthContextType, LoginRequest, LoginResponse } from "../types/auth";
+import type  { AuthContext as AuthContextType, LoginRequest, LoginResponse, LoginSuccess } from "../types/auth";
 
 const AuthContext = createContext<AuthContextType|null>(null);
 
 function AuthProvider({children}: {children: React.ReactNode}) {
-  const login = async(evt: React.MouseEvent, credentials: LoginRequest) => {
-    evt.preventDefault() // prevents side reloading and triggered rerendering
+  const login = async(credentials: LoginRequest): Promise<LoginSuccess> => {
     const loginResponseData: LoginResponse = await fetchLogin(credentials);
     return loginResponseData
   }

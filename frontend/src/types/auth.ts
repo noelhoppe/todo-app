@@ -17,7 +17,7 @@ type LoginResponse = LoginSuccess | LoginFailure;
 
 // --- CONTEXT
 type AuthContext = {
-  login: (evt: React.MouseEvent, credentials: LoginRequest) => Promise<LoginResponse>;
+  login: (credentials: LoginRequest) => Promise<LoginSuccess>;
 }
 
 export type {

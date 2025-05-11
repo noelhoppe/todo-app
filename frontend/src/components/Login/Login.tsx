@@ -2,7 +2,6 @@ import {
   Typography,
   TextField,
   Button,
-  InputAdornment,
   IconButton
 } from "@mui/material";
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
@@ -18,8 +17,67 @@ function Login() {
     password: ""
   });
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  // const [error, setError] = useState<string|null>(null);
+  const [errorMessage, setErrorMessage] = useState<LoginRequest>({
+    username: "",
+    password: "",
+  })
   const { login } = useAuth()
+
+
+  const handleUsernameChange = (evt:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>) => {
+    const { value } = evt.target;
+    setCredentials((prev) => ({
+      ... prev,
+      username: value
+    }));
+    setErrorMessage((prev) => ({
+      ...prev,
+      username: ""
+    }))
+  }
+
+  const  handlePasswordChange = (evt: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>) => {
+    const { value } = evt.target;
+    setCredentials((prev) => ({
+      ... prev,
+      password: value
+    }));
+    setErrorMessage((prev) => ({
+      ... prev,
+      password: ""
+    }));
+  }
+
+  // Event handler for form submission
+  const handleFormSubmit = async(evt: React.FormEvent) => {
+    // -- PREVENTING DEFAULT BEHAVIOUR
+    evt.preventDefault()
+    // -- DESTRUCTURING
+    const { username, password } = credentials;
+    // -- VALIDATION: check if username or password is empty
+    let hasError = false;
+    if (!username.trim()) {
+      setErrorMessage((prev) => ({
+        ... prev,
+        username: "Username is required" // SET ERROR MESSAGE: username is empty
+      }))
+      hasError = true;
+    }
+    if (!password.trim()) {
+      setErrorMessage((prev) => ({
+        ... prev,
+        password: "Password is requiered" // SET ERRO MESSAGE: password is empty
+      }))
+      hasError = true;
+    }
+    // PREVENTING API REQUEST IF THERE IS AN VALIDATION ERROR
+    if (hasError) {
+      return;
+    }
+    // API REQUEST
+    const res = await login(credentials)
+  }
+
 
   return (
     <Styles.LoginContainer maxWidth="md">
@@ -31,40 +89,27 @@ function Login() {
         >Login
         </Typography>
         {/* TODO: Link to regsitration page */}
-        <Styles.FormWrapper>
-          {/* TODO: using user icon */}
+        <Styles.FormWrapper onSubmit={handleFormSubmit}>
           <TextField
           id="username"
           label="Username"
           variant="filled"
-          required={true}
           autoFocus={true}
           type="text"
           fullWidth={true}
           margin="dense"
-          // TODO: UI error handling
-          onChange={(evt) => { // tracking 
-            setCredentials((prev) => ({
-              ... prev,
-              username: evt.target.value
-            }));
-            // setError(null);
-          }}
-          // helperText={error}
-          // error={error ? true : false}
+          onChange={handleUsernameChange}
+          helperText={errorMessage.username}
+          error={Boolean(errorMessage.username)}
         >
         </TextField>
         <TextField 
-          // TODO: Toggling password visibility with icon
-          // TODO: using password icon
           id="password"
           label="Password"
           variant="filled"
-          required={true}
           type={showPassword ? "text": "password"}
           fullWidth={true}
           margin="dense"
-          // TODO: UI error handling
           slotProps={{
             input: {
               endAdornment: (
@@ -74,23 +119,15 @@ function Login() {
               )
             }
           }}
-          onChange={(evt) => {
-            setCredentials((prev) => ({
-              ...prev, 
-              password: evt.target.value
-            }))
-            // setError(null)
-          }}
-          // helperText={error}
-          // error={error ? true : false}
+          onChange={handlePasswordChange}
+          helperText={errorMessage.password}
+          error={Boolean(errorMessage.password)}
         />
         <Button
           variant="contained"
           size="large"
           fullWidth={true}
           type="submit"
-          // TODO: UI error handling
-          onClick={(evt) => login(evt, credentials)}
         >Login
         </Button>   
         </Styles.FormWrapper>
