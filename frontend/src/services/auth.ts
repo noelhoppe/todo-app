@@ -52,7 +52,7 @@ async function fetchIsAuthorized() {
     mode: "cors",
   };
   try {
-    const res = await fetch(ENDPOINT, requestInit) // error
+    const res = await fetch(ENDPOINT, requestInit)
     if (!res.ok) {
       let errorMessage = "Unknwon Error";
       try {
