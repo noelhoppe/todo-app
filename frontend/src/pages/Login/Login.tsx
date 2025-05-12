@@ -5,8 +5,10 @@ import * as Styles from "./Login.styles";
 import useAuth from "../../hooks/useAuth";
 import { useState } from "react";
 import { LoginRequest, LoginSuccess } from "../../types/auth";
+import { Navigate, useNavigate } from "react-router-dom";
 
 function Login() {
+  const navigate = useNavigate();
   const [credentials, setCredentials] = useState<LoginRequest>({
     username: "",
     password: "",
@@ -75,6 +77,7 @@ function Login() {
     // API REQUEST
     try {
       const res: LoginSuccess = await login(credentials);
+      navigate("/todos/", {replace: true})
     } catch (error) {
       if (error instanceof Error) {
         setErrorMessage({
@@ -127,7 +130,7 @@ function Login() {
             onChange={handlePasswordChange}
             helperText={errorMessage.password}
             error={Boolean(errorMessage.password)}
-          />
+          />  
           <Button
             variant="contained"
             size="large"

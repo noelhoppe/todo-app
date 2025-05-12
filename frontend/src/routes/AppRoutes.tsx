@@ -7,12 +7,12 @@ function AppRoutes() {
   return (
     <Routes>
       {/* REDIRECT / => /login */}
-      <Route path="/" element={<Navigate to="/login" replace/>} />
+      <Route path="/" element={<Navigate to="/login/" replace={true}/>} />
       {/* /login is public */}
-      <Route path="/login" element={<Login />} />
+      <Route path="/login/" element={<Login />} />
       {/* TODO: /register is also public */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/todos" element={<Todo />} />
+        <Route path="/todos/" element={<Todo />} />
       </Route>
     </Routes>
   )

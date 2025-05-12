@@ -15,6 +15,9 @@ function ProtectedRoute() {
     const checkAuthStatus = async() => {
       const status: boolean = await isAuthenticated();
       setIsUserAuthenticated(status);
+      if (!status) {
+        navigate("/login/", {replace: true})
+      }
     }
     checkAuthStatus();
   }, []) // on mount
@@ -23,9 +26,7 @@ function ProtectedRoute() {
     return null;
   }
 
-  return (
-    isUserAuthenticated ? <Outlet /> : navigate("/login/")
-  );
+  return <Outlet />
 }
 
 export default ProtectedRoute;
