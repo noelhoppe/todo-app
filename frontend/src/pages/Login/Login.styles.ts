@@ -5,11 +5,11 @@ import { Container } from "@mui/material";
 export const LoginContainer = styled(Container)`
   min-height: 100dvh;
   display: flex;
-  justify-content: center;
   align-items: center;
 `;
 
 export const LoginWrapper = styled(Box)`
+  flex: 1%;
   padding: ${({ theme }) => theme.spacing(3)};
   background-color: ${({ theme }) => theme.palette.background.paper};
 `;
