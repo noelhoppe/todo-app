@@ -28,7 +28,6 @@ function App() {
       <ThemeProvider theme={theme}>
         <BrowserRouter>
           <AuthProvider>
-            {/* TODO: react-router protected routing */}
             <CssBaseline />
             <AppRoutes />
           </AuthProvider>

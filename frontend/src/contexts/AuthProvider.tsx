@@ -2,11 +2,10 @@ import { createContext } from "react";
 import { fetchIsAuthorized, fetchLogin } from "../services/auth";
 import type  { AuthContext as AuthContextType, LoginRequest, LoginResponse, LoginSuccess } from "../types/auth";
 
-const AuthContext = createContext<AuthContextType|null>(null);
+export const AuthContext = createContext<AuthContextType|null>(null);
 
-function AuthProvider({children}: {children: React.ReactNode}) {
+export default function AuthProvider({children}: {children: React.ReactNode}) {
   const login = async(credentials: LoginRequest): Promise<LoginSuccess> => {
-    // FIXME: Is this functiom usefull or is it better to include fetchLogin also in this function?
     const loginResponseData: LoginSuccess = await fetchLogin(credentials);
     return loginResponseData
   }
@@ -28,9 +27,4 @@ function AuthProvider({children}: {children: React.ReactNode}) {
       {children}
     </AuthContext.Provider>
   )
-}
-
-export default AuthProvider;
-export {
-  AuthContext
 }

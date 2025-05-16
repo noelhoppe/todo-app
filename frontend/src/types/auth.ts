@@ -1,30 +1,22 @@
 // --- REQUEST ---
-type LoginRequest = {
+export type LoginRequest = {
   username: string;
   password: string;
 }
 
 // --- RESPONSE ---
-type LoginSuccess = {
+export type LoginSuccess = {
   message: string
 };
 
-type LoginFailure = {
+export type LoginFailure = {
   detail: string;
 };
 
-type LoginResponse = LoginSuccess | LoginFailure;
+export type LoginResponse = LoginSuccess | LoginFailure;
 
-// --- CONTEXT
-type AuthContext = {
+// --- CONTEXT ---
+export type AuthContext = {
   login: (credentials: LoginRequest) => Promise<LoginSuccess>;
   isAuthenticated: () => Promise<boolean>;
 }
-
-export type {
-  LoginRequest,
-  LoginSuccess,
-  LoginFailure,
-  LoginResponse,
-  AuthContext
-};

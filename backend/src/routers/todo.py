@@ -18,7 +18,7 @@ router = APIRouter(
 async def create_todo(todo: ToDoIn, user: GetCurrentUser, db_session: DatabaseSessionDep):
   # todo_out = ToDoOut(title=todo.title, due_to=todo.due_to, is_done=todo.is_done, id=2)
   todo_model = insert_todo(todo, user.id, db_session)
-  return ToDoOut.model_validate(todo_model)
+  return ToDoOut.model_validate(todo_model, from_attributes=True)
 
 # @router.get(
 #     path="/",

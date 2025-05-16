@@ -1,9 +1,9 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Login from "../pages/Login/Login";
 import ProtectedRoute from "./ProtectedRoutes";
-import Todo from "../pages/Todos/Todo";
+import Todo from "../pages/ToDo/Todo";
 
-function AppRoutes() {
+export default function AppRoutes() {
   return (
     <Routes>
       {/* REDIRECT / => /login */}
@@ -17,5 +17,3 @@ function AppRoutes() {
     </Routes>
   )
 }
-
-export default AppRoutes;

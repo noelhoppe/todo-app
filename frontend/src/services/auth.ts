@@ -1,7 +1,6 @@
-import { ErrorOutline } from "@mui/icons-material";
 import { LoginFailure, LoginRequest, LoginSuccess } from "../types/auth";
 
-async function fetchLogin(credentials: LoginRequest): Promise<LoginSuccess> {
+export async function fetchLogin(credentials: LoginRequest): Promise<LoginSuccess> {
   const ENDPOINT = `${import.meta.env.VITE_API_URL}/login/`;
   const { username, password } = credentials;
   const formData = new FormData();
@@ -44,7 +43,7 @@ async function fetchLogin(credentials: LoginRequest): Promise<LoginSuccess> {
   }
 }
 
-async function fetchIsAuthorized() {
+export async function fetchIsAuthorized() {
   const ENDPOINT = `${import.meta.env.VITE_API_URL}/isAuthorized/`;
   const requestInit: RequestInit = {
     credentials: "include",
@@ -77,8 +76,3 @@ async function fetchIsAuthorized() {
     throw new Error("An unexpected error occured");
   }
 }
-
-export {
-  fetchLogin,
-  fetchIsAuthorized
-};
