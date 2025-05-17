@@ -8,3 +8,8 @@ class ToDoIn(BaseModel):
 
 class ToDoOut(ToDoIn):
   id: int
+
+class ToDoUpdate(BaseModel):
+  title: str | None = None
+  due_to: datetime | None = None
+  is_done: bool | None = None
