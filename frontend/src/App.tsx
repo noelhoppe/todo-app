@@ -9,6 +9,8 @@ import "@fontsource/roboto/700.css";
 import AuthProvider from "./contexts/AuthProvider";
 import { BrowserRouter } from "react-router";
 import AppRoutes from "./routes/AppRoutes";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 // logging API URL environment variable
 // console.log(import.meta.env.VITE_API_URL)
@@ -26,12 +28,14 @@ function App() {
   return (
     <>
       <ThemeProvider theme={theme}>
-        <BrowserRouter>
-          <AuthProvider>
-            <CssBaseline />
-            <AppRoutes />
-          </AuthProvider>
-        </BrowserRouter>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <BrowserRouter>
+            <AuthProvider>
+              <CssBaseline />
+              <AppRoutes />
+            </AuthProvider>
+          </BrowserRouter>
+        </LocalizationProvider>
       </ThemeProvider>
     </>
   );
