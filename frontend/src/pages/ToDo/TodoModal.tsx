@@ -21,7 +21,7 @@ export default function TodoModal({
 }: {
   isOpen: boolean;
   title: string,
-  onClose: () => void;
+  onClose: (evt: React.MouseEvent<HTMLButtonElement>) => void;
   onSubmit: (evt: React.FormEvent<HTMLFormElement>) => void;
   onTitleChange: (title: string) => void;
   onDueDateChange: (dueDate: PickerValue) => void;

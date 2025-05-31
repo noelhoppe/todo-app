@@ -10,7 +10,7 @@ export default function Modal({
 }: {
   isOpen: boolean;
   title: string;
-  onClose: () => void;
+  onClose: (evt: React.MouseEvent<HTMLButtonElement>) => void;
   children: React.ReactNode;
 }) {
   if (!isOpen) {

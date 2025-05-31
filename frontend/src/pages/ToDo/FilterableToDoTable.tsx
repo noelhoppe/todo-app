@@ -224,6 +224,7 @@ export default function FilterableTodoTable() {
   };
 
   const handleCreate = async (evt: React.FormEvent<HTMLFormElement>) => {
+    console.log("handleCreate called");
     evt.preventDefault();
 
     let isValid =
@@ -294,6 +295,7 @@ export default function FilterableTodoTable() {
   };
 
   const handleUpdate = async (evt: React.FormEvent<HTMLFormElement>) => {
+    console.log("handleUpdate called");
     evt.preventDefault();
     if (editingId === null) {
       return;
@@ -307,7 +309,8 @@ export default function FilterableTodoTable() {
     }
   };
 
-  const resolveSubmitHandler = () => {
+  const resolveSubmitHandler = (evt: React.FormEvent<HTMLFormElement>) => {
+    evt.preventDefault();
     if (modalOpen === "create") {
       return handleCreate;
     } else if (modalOpen === "update") {
@@ -317,7 +320,8 @@ export default function FilterableTodoTable() {
     }
   };
 
-  const resolveOnCloseHandler = () => {
+  const resolveOnCloseHandler = (evt: React.MouseEvent<HTMLButtonElement>) => {
+    evt.preventDefault();
     if (modalOpen === "create") {
       return handleTodoCreateClose;
     } else if (modalOpen === "update") {
