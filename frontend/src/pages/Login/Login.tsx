@@ -7,7 +7,7 @@ import { useState } from "react";
 import { LoginRequest, LoginSuccess } from "../../types/auth";
 import { Navigate, useNavigate } from "react-router-dom";
 
-function Login() {
+export default function Login() {
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState<LoginRequest>({
     username: "",
@@ -144,5 +144,3 @@ function Login() {
     </Styles.LoginContainer>
   );
 }
-
-export default Login;

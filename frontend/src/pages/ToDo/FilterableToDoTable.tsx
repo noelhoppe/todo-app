@@ -20,15 +20,13 @@ import EditIcon from "@mui/icons-material/Edit";
 export default function FilterableTodoTable() {
   const [rows, setRows] = useState<TodoItemResponse[]>([]);
 
-  // filter states
-  const [status, setStatus] = useState<"all" | "open" | "done">("all");
-  const [title, setTitle] = useState<string>("");
+  // --- FILTER STATES ---
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "done">("all");
+  const [titleFilter, setTitleFilter] = useState<string>("");
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [openDialogId, setOpenDialogId] = useState<number | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState<boolean>(false);
-
-
 
   const columns: GridColDef[] = [
     {
@@ -108,11 +106,10 @@ export default function FilterableTodoTable() {
     fetchDeleteTodo(id);
   };
 
-
   const filteredRows = rows
     .filter((row) => {
       // filter by status
-      switch (status) {
+      switch (statusFilter) {
         case "all":
           return true;
         case "done":
@@ -128,7 +125,7 @@ export default function FilterableTodoTable() {
       return row.title
         .trim()
         .toLowerCase()
-        .includes(title.trim().toLowerCase());
+        .includes(titleFilter.trim().toLowerCase());
     });
 
   return (
@@ -156,8 +153,9 @@ export default function FilterableTodoTable() {
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
         />
+        {/* TODO: Logout Button */}
       </Stack>
-      <FilterBar status={status} setStatus={setStatus} setTitle={setTitle} />
+      <FilterBar statusFilter={statusFilter} onStatusClick={setStatusFilter} onTitleChange={setTitleFilter} />
       <DataGrid
         aria-labelledby="title"
         rows={filteredRows}

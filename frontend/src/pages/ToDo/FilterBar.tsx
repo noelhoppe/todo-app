@@ -1,13 +1,13 @@
 import { Chip, Stack, TextField, Typography } from "@mui/material";
 
 export default function FilterBar({
-  status,
-  setStatus,
-  setTitle,
+  statusFilter,
+  onStatusClick,
+  onTitleChange,
 }: {
-  status: "all" | "open" | "done";
-  setStatus: (status: "all" | "open" | "done") => void;
-  setTitle: (title: string) => void;
+  statusFilter: "all" | "open" | "done";
+  onStatusClick: (status: "all" | "open" | "done") => void;
+  onTitleChange: (title: string) => void;
 }) {
   return (
     <Stack
@@ -17,7 +17,7 @@ export default function FilterBar({
     >
       <TextField
         label="Search by Title"
-        onChange={(evt) => setTitle(evt.target.value)}
+        onChange={(evt) => onTitleChange(evt.target.value)}
       />
       <Stack
         direction="row"
@@ -33,26 +33,26 @@ export default function FilterBar({
         <Chip
           label="All"
           component="button"
-          variant={status === "all" ? "filled" : "outlined"}
+          variant={statusFilter === "all" ? "filled" : "outlined"}
           clickable={true}
           aria-label="Show all todos"
-          onClick={() => setStatus("all")}
+          onClick={() => onStatusClick("all")}
         />
         <Chip
           label="Open"
           component="button"
-          variant={status === "open" ? "filled" : "outlined"}
+          variant={statusFilter === "open" ? "filled" : "outlined"}
           clickable={true}
           aria-label="Show open todos"
-          onClick={() => setStatus("open")}
+          onClick={() => onStatusClick("open")}
         />
         <Chip
           label="Done"
           component="button"
-          variant={status === "done" ? "filled" : "outlined"}
+          variant={statusFilter === "done" ? "filled" : "outlined"}
           clickable={true}
           aria-label="Show done todos"
-          onClick={() => setStatus("done")}
+          onClick={() => onStatusClick("done")}
         />
       </Stack>
     </Stack>
