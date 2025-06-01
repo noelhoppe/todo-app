@@ -1,4 +1,10 @@
-import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridColDef,
+  GridRenderCellParams,
+  GridValueFormatter,
+} from "@mui/x-data-grid";
+import utc from "dayjs/plugin/utc";
 import { useEffect, useState } from "react";
 import { Button, IconButton, Stack, Typography } from "@mui/material";
 import FilterBar from "./FilterBar";
@@ -15,6 +21,8 @@ import { PickerValue } from "@mui/x-date-pickers/internals";
 import dayjs from "dayjs";
 import TodoModal from "./TodoModal";
 import DeleteButtonWithConfirm from "./DeleteButtonWithConfirm";
+
+dayjs.extend(utc);
 
 export default function FilterableTodoTable() {
   const [rows, setRows] = useState<TodoItemResponse[]>([]);
@@ -54,6 +62,10 @@ export default function FilterableTodoTable() {
       filterable: false,
       flex: 1,
       hideable: false,
+      sortable: true,
+      sortComparator: (title1: string, title2: string) => {
+        return title1.localeCompare(title2);
+      },
     },
     {
       field: "due_to",
@@ -62,6 +74,35 @@ export default function FilterableTodoTable() {
       filterable: false,
       flex: 1,
       hideable: false,
+      sortable: true,
+      sortComparator: (date1, date2) => {
+        const d1 = date1 ? dayjs.utc(date1).local() : null;
+        const d2 = date2 ? dayjs.utc(date2).local() : null;
+
+        if (!d1 && !d2) return 0;
+        if (!d1) return 1; // nulls last
+        if (!d2) return -1;
+        
+        if (d1.isBefore(d2)) return -1;
+        if (d1.isAfter(d2)) return 1;
+        return 0;
+      },
+      renderCell: ({ value }) => {
+        if (!value || !dayjs(value).isValid()) {
+          return <span>-</span>;
+        }
+        const date = dayjs.utc(value).local().startOf("day");
+        const today = dayjs().startOf("day");
+        return (
+          <span
+            style={{
+              color: date.isBefore(today) ? "red" : "black",
+            }}
+          >
+            {date.format("DD/MM/YYYY")}
+          </span>
+        );
+      },
     },
     {
       field: "is_done",
@@ -69,7 +110,10 @@ export default function FilterableTodoTable() {
       hideable: false,
       disableReorder: true,
       flex: 1,
-      sortable: false,
+      sortable: true,
+      sortComparator: (is_done1: boolean, is_done2: boolean) => {
+        return Number(is_done1) - Number(is_done2);
+      },
       renderCell: (params) => {
         const isDone: boolean = params.value;
 
@@ -143,6 +187,8 @@ export default function FilterableTodoTable() {
     }
     try {
       await fetchDeleteTodo(editingId);
+      const rows = await fetchGetTodos();
+      setRows(rows);
       setEditingId(null);
       setModalOpen(null);
       setSucccessOpen("delete");
@@ -172,12 +218,12 @@ export default function FilterableTodoTable() {
       title: "",
       due_to: null,
       is_done: false,
-    })
+    });
     setErrorMessage({
       title: "",
       due_to: "",
     });
-  }
+  };
 
   const handleTitleChange = (title: string) => {
     setTodo((prevTodo) => ({
@@ -244,7 +290,9 @@ export default function FilterableTodoTable() {
     }
     // send the request to the server
     try {
-      const res = await fetchPostTodos(todo);
+      await fetchPostTodos(todo);
+      const todos = await fetchGetTodos();
+      setRows(todos);
       setSucccessOpen("create");
       setModalOpen(null); // close the modal after successful creation
       setTodo({
@@ -301,6 +349,8 @@ export default function FilterableTodoTable() {
     }
     try {
       await fetchPatchTodo(editingId, todo);
+      const todos = await fetchGetTodos();
+      setRows(todos);
       setSucccessOpen("update");
       setModalOpen(null);
     } catch (error) {
@@ -328,7 +378,7 @@ export default function FilterableTodoTable() {
     } else {
       throw new Error("Invalid modal state");
     }
-  }
+  };
 
   // -- BEGIN HANDLE TODO FILTERING BY STATUS AND TITLE ---
   const filteredRows = rows
@@ -375,7 +425,13 @@ export default function FilterableTodoTable() {
       />
       <TodoModal
         isOpen={modalOpen === "create" || modalOpen === "update"}
-        title={modalOpen === "create" ? "Create Todo" : modalOpen === "update" ? "Update Todo" : ""}
+        title={
+          modalOpen === "create"
+            ? "Create Todo"
+            : modalOpen === "update"
+            ? "Update Todo"
+            : ""
+        }
         onClose={resolveOnCloseHandler}
         onSubmit={resolveSubmitHandler}
         onTitleChange={handleTitleChange}

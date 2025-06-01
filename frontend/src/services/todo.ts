@@ -1,4 +1,3 @@
-import { jsx } from "react/jsx-runtime";
 import { TodoItemRequest, TodoItemResponse, ToDoUpdateRequest } from "../types/todo";
 
 export async function fetchPostTodos(todo: TodoItemRequest): Promise<TodoItemResponse> {

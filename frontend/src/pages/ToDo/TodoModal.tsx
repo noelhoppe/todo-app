@@ -1,11 +1,8 @@
 import { Button, MenuItem, Select, Stack, TextField } from "@mui/material";
 import Modal from "../../components/Modal";
 import { DatePicker } from "@mui/x-date-pickers";
-import { TodoItemRequest, ToDoUpdateRequest } from "../../types/todo";
-import { useEffect, useState } from "react";
+import { ToDoUpdateRequest } from "../../types/todo";
 import dayjs from "dayjs";
-import { fetchPostTodos } from "../../services/todo";
-import SuccessSnackbar from "../../components/SuccessSnackbar";
 import { PickerValue } from "@mui/x-date-pickers/internals";
 
 export default function TodoModal({
