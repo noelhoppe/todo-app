@@ -10,11 +10,11 @@ import {
   fetchPostTodos,
 } from "../../services/todo";
 import { TodoItemRequest, TodoItemResponse } from "../../types/todo";
-import DeleteButtonWithConfirm from "./DeleteButtonWithConfirm";
 import SuccessSnackbar from "../../components/SuccessSnackbar";
 import { PickerValue } from "@mui/x-date-pickers/internals";
 import dayjs from "dayjs";
 import TodoModal from "./TodoModal";
+import DeleteButtonWithConfirm from "./DeleteButtonWithConfirm";
 
 export default function FilterableTodoTable() {
   const [rows, setRows] = useState<TodoItemResponse[]>([]);
@@ -54,7 +54,6 @@ export default function FilterableTodoTable() {
       filterable: false,
       flex: 1,
       hideable: false,
-      sortable: true,
     },
     {
       field: "due_to",
@@ -312,9 +311,9 @@ export default function FilterableTodoTable() {
   const resolveSubmitHandler = (evt: React.FormEvent<HTMLFormElement>) => {
     evt.preventDefault();
     if (modalOpen === "create") {
-      return handleCreate;
+      return handleCreate(evt);
     } else if (modalOpen === "update") {
-      return handleUpdate;
+      return handleUpdate(evt);
     } else {
       throw new Error("Invalid modal state");
     }
@@ -323,9 +322,9 @@ export default function FilterableTodoTable() {
   const resolveOnCloseHandler = (evt: React.MouseEvent<HTMLButtonElement>) => {
     evt.preventDefault();
     if (modalOpen === "create") {
-      return handleTodoCreateClose;
+      return handleTodoCreateClose();
     } else if (modalOpen === "update") {
-      return handleTodoUpdateClose;
+      return handleTodoUpdateClose();
     } else {
       throw new Error("Invalid modal state");
     }
