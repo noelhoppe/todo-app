@@ -1,6 +1,5 @@
-1. Logout
-3. Refresh Token
-4. Avoid login twice
-5. Handling todo's date
-6. Register
-7. Using React Query
+Further improvements:
+1. Using FastAPI JWT Auth for Authentication (and Authorization)
+2. Using React Query  
+3. Handling Date over text field
+4. CI/CD Integration using fly.io

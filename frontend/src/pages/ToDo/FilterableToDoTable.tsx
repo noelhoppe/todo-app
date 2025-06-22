@@ -21,10 +21,23 @@ import { PickerValue } from "@mui/x-date-pickers/internals";
 import dayjs from "dayjs";
 import TodoModal from "./TodoModal";
 import DeleteButtonWithConfirm from "./DeleteButtonWithConfirm";
+import useAuth from "../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 dayjs.extend(utc);
 
 export default function FilterableTodoTable() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const handleLogout = async() => {
+    try {
+      await logout();
+      navigate("/login/", { replace: true });
+    } catch (error) {
+      console.error("Error during logout:", error);
+    }
+  }
+
   const [rows, setRows] = useState<TodoItemResponse[]>([]);
 
   // --- FOR CREATING AND UPDATING TODOS ---
@@ -82,7 +95,7 @@ export default function FilterableTodoTable() {
         if (!d1 && !d2) return 0;
         if (!d1) return 1; // nulls last
         if (!d2) return -1;
-        
+
         if (d1.isBefore(d2)) return -1;
         if (d1.isAfter(d2)) return 1;
         return 0;
@@ -444,17 +457,23 @@ export default function FilterableTodoTable() {
         <Typography id="title" variant="h3" component="h1">
           My Todos
         </Typography>
-
-        {/* Create Todo */}
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleTodoCreateOpen}
-        >
-          Create Todo
-        </Button>
-
-        {/* TODO: Logout Button */}
+        <Stack direction="row" spacing={2}>
+          {/* Create Todo */}
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleTodoCreateOpen}
+          >
+            Create Todo
+          </Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={handleLogout}
+          >
+            Logout
+          </Button>
+        </Stack>
       </Stack>
       <FilterBar
         statusFilter={statusFilter}

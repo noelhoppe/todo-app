@@ -3,20 +3,24 @@ export type LoginRequest = {
   username: string;
   password: string;
 }
+export type RegisterRequest = LoginRequest & {
+  repeatPassword: string; // frontend only, not sent to the backend
+}
 
 // --- RESPONSE ---
-export type LoginSuccess = {
+export type Success = {
   message: string
 };
 
-export type LoginFailure = {
+export type Failure = {
   detail: string;
 };
 
-export type LoginResponse = LoginSuccess | LoginFailure;
+export type Response = Success | Failure;
 
 // --- CONTEXT ---
 export type AuthContext = {
-  login: (credentials: LoginRequest) => Promise<LoginSuccess>;
+  login: (credentials: LoginRequest) => Promise<Success>;
+  logout: () => Promise<Success>;
   isAuthenticated: () => Promise<boolean>;
 }

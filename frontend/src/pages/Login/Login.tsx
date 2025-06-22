@@ -4,8 +4,8 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import * as Styles from "./Login.styles";
 import useAuth from "../../hooks/useAuth";
 import { useState } from "react";
-import { LoginRequest, LoginSuccess } from "../../types/auth";
-import { Navigate, useNavigate } from "react-router-dom";
+import { LoginRequest, Success } from "../../types/auth";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -20,32 +20,9 @@ export default function Login() {
   });
   const { login } = useAuth();
 
-  const handleUsernameChange = (
-    evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { value } = evt.target;
-    setCredentials((prev) => ({
-      ...prev,
-      username: value,
-    }));
-    setErrorMessage((prev) => ({
-      ...prev,
-      username: "",
-    }));
-  };
-
-  const handlePasswordChange = (
-    evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { value } = evt.target;
-    setCredentials((prev) => ({
-      ...prev,
-      password: value,
-    }));
-    setErrorMessage((prev) => ({
-      ...prev,
-      password: "",
-    }));
+  const handleChange = (field: keyof LoginRequest, value: string) => {
+    setCredentials((prev) => ({ ...prev, [field]: value }));
+    setErrorMessage((prev) => ({ ...prev, [field]: "" }));
   };
 
   // Event handler for form submission
@@ -76,8 +53,8 @@ export default function Login() {
     }
     // API REQUEST
     try {
-      const res: LoginSuccess = await login(credentials);
-      navigate("/todos/", {replace: true})
+      await login(credentials);
+      navigate("/todos/", { replace: true });
     } catch (error) {
       if (error instanceof Error) {
         setErrorMessage({
@@ -94,6 +71,17 @@ export default function Login() {
         <Typography color="textPrimary" variant="h1" gutterBottom={true}>
           Login
         </Typography>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Noch keinen Account?{" "}
+          <Button
+            variant="text"
+            size="small"
+            onClick={() => navigate("/register/")}
+            sx={{ textTransform: "none", padding: 0, minWidth: "unset" }}
+          >
+            Registrieren
+          </Button>
+        </Typography>
         <Styles.FormWrapper onSubmit={handleFormSubmit}>
           <TextField
             id="username"
@@ -103,7 +91,7 @@ export default function Login() {
             type="text"
             fullWidth={true}
             margin="dense"
-            onChange={handleUsernameChange}
+            onChange={(evt) => handleChange("username", evt.target.value)}
             helperText={errorMessage.username}
             error={Boolean(errorMessage.username)}
           ></TextField>
@@ -127,10 +115,10 @@ export default function Login() {
                 ),
               },
             }}
-            onChange={handlePasswordChange}
+            onChange={(evt) => handleChange("password", evt.target.value)}
             helperText={errorMessage.password}
             error={Boolean(errorMessage.password)}
-          />  
+          />
           <Button
             variant="contained"
             size="large"

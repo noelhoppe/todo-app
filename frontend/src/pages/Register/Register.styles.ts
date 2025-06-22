@@ -2,13 +2,13 @@ import styled from "styled-components";
 import { Box } from "@mui/material";
 import { Container } from "@mui/material";
 
-export const LoginContainer = styled(Container)`
+export const RegisterContainer = styled(Container)`
   min-height: 100dvh;
   display: flex;
   align-items: center;
 `;
 
-export const LoginWrapper = styled(Box)`
+export const RegisterWrapper = styled(Box)`
   border-radius: 20px;
   flex: 1;
   padding: ${({ theme }) => theme.spacing(3)};
