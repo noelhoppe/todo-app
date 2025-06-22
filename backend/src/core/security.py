@@ -156,7 +156,7 @@ def get_access_token_from_cookie(request: Request) -> str:
     )
   return token
 
-def destroy_access_token_cookie(request: Request) -> None:
+def destroy_access_token_cookie(response: Response) -> None:
   """
   Destroy the access token cookie.
 
@@ -164,7 +164,7 @@ def destroy_access_token_cookie(request: Request) -> None:
   :raises HTTPException: If the access token cookie is not found.
   """
   try:
-    request.cookies.pop(ACCESS_TOKEN_COOKIE_KEY)
+    response.delete_cookie(ACCESS_TOKEN_COOKIE_KEY)
   except KeyError:
     raise HTTPException(
       status_code=status.HTTP_400_BAD_REQUEST,

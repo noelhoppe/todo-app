@@ -32,7 +32,7 @@ async def login_user(
   return {"message": "Login successfull"}
 
 @router.get(
-    path="/isAuthorized/",
+    path="/is_authorized/",
     status_code=status.HTTP_200_OK
 )
 async def is_authorized(
@@ -63,6 +63,6 @@ async def register_user(
   path="/logout/",
   status_code=status.HTTP_200_OK
 )
-async def logout_user(request: Request):
-  destroy_access_token_cookie(request)
+async def logout_user(response: Response):
+  destroy_access_token_cookie(response)
   return {"message": "Logout successfull"}
