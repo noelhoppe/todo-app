@@ -1,6 +1,8 @@
+# --- EXTERN IMPORTS ---
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# --- INTERN IMPORTS ---
 from src.core.config import settings
 from src.core.db import create_tables
 from src.routers.auth import router as auth

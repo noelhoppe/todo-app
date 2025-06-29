@@ -1,8 +1,8 @@
-from typing import Annotated
-from fastapi import Depends
+# --- EXTERN IMPORTS ---
 from sqlalchemy import select
 from sqlmodel import Session
 
+# --- INTERN IMPORTS ---
 from src.models.user import User
 
 def get_user(username: str, db_session: Session) -> User | None:

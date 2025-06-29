@@ -1,19 +1,18 @@
-from typing import Annotated
-import os
+# --- EXTERN IMPORTS ---
+import uuid
 from fastapi import Depends, HTTPException, Request, Response, status
 from datetime import timedelta, datetime, timezone
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
-from fastapi.security import OAuth2PasswordRequestForm
 import jwt
 from passlib.context import CryptContext
 from sqlmodel import Session
+from typing import Annotated
 
+# --- INTERN IMPORTS ---
 from src.core.db import DatabaseSessionDep
 from src.crud.user import get_user, get_user_by_id
 from src.models.user import User
 from src.core.config import settings
+from src.crud.refresh_token import get_refresh_token_by_jti
 
 # --- Password hashing 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -116,6 +115,81 @@ def validate_access_token(token: str) -> dict[str, str]:
       detail="Invalid token",
       headers={"WWW-Authenticate": "Bearer"}
     )
+  
+# --- JWT Refresh Token handling
+REFRESH_TOKEN_SECRET_KEY = settings.refresh_token_secret_key
+def create_refresh_token(user_id: int, expires_delta: timedelta = timedelta(days=14)):
+  jti = str(uuid.uuid4())
+  expires = datetime.now(timezone.utc) + expires_delta
+  to_encode = {
+    "sub": str(user_id),
+    "jti": jti,
+    "exp": expires,
+    "type": "refresh"
+  }
+  encoded_jwt = jwt.encode(
+    payload=to_encode,
+    key=REFRESH_TOKEN_SECRET_KEY,
+    algorithm=ALGORITHM
+  )
+  return encoded_jwt, jti, expires
+
+def validate_refresh_token(token: str, db_session: Session) -> dict[str, str]:
+  try:
+    payload = jwt.decode(
+      jwt=token, 
+      key=REFRESH_TOKEN_SECRET_KEY,
+      algorithms=[ALGORITHM],
+      options={
+        "verify_signature": True,
+        "verify_exp": True,
+      }
+    ) 
+
+    if payload.get("type") != "refresh":
+      raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid token type"
+      )
+    
+    jti = payload.get("jti")
+    refresh_token = get_refresh_token_by_jti(jti=jti, db_session=db_session)
+    if not refresh_token:
+      raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Refresh token not found"
+      )
+    if refresh_token.is_revoked:
+      raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Refresh token is revoked"
+      )
+    
+    return payload
+  except jwt.exceptions.ExpiredSignatureError:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Refresh token expired",
+      headers={"WWW-Authenticate": "Bearer"}
+    )
+  except jwt.exceptions.DecodeError:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Refresh token cannot be decoded because it failed validation",
+      headers={"WWW-Authenticate": "Bearer"}
+    )
+  except jwt.exceptions.InvalidSignatureError:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="The token's signature doesn't match the one provided as part of the token",
+      headers={"WWW-Authenticate": "Bearer"}
+    )
+  except jwt.exceptions.InvalidTokenError:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid token",
+      headers={"WWW-Authenticate": "Bearer"}
+    )
 
 # --- Cookie based JWT management
 ACCESS_TOKEN_COOKIE_KEY = "access_token"
@@ -171,6 +245,41 @@ def destroy_access_token_cookie(response: Response) -> None:
       detail="No valid session cookie found. Please log in again"
     )
   
+REFRESH_TOKEN_COOKIE_KEY = "refresh_token"
+def set_refresh_token_in_cookie(
+    response: Response,
+    token: str,
+    expires_delta: timedelta = timedelta(days=14)
+):
+  response.set_cookie(
+    key=REFRESH_TOKEN_COOKIE_KEY,
+    value=token,
+    httponly=True,  # prevents reading or manipulating cookie using document.cookie with javascript in frontend to avoid XSS-attacks
+    # note: use secure=True in production environment to ensure that the cookie is only send via https to avoid MITM-attacks
+    samesite="strict",  # cookie is sent only to same domain that sets cookie to avoid CSRF-attacks
+    max_age=int(expires_delta.total_seconds())
+  )
+
+def get_refresh_token_from_cookie(request: Request) -> str:
+  token = request.cookies.get(REFRESH_TOKEN_COOKIE_KEY)
+  if not token:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Refresh token in Cookie not found"
+    )
+  return token
+
+def destroy_refresh_token_cookie(
+    response: Response,
+):
+  try:
+    response.delete_cookie(REFRESH_TOKEN_COOKIE_KEY)
+  except KeyError:
+    raise HTTPException(
+      status_code=status.HTTP_400_BAD_REQUEST,
+      detail="No valid session cookie found. Please log in again"
+    )
+  
 # -- Active Authentication (login)
 def authenticate_user(username: str, plain_password: str, db_session: Session) -> User:
   """
@@ -193,25 +302,36 @@ def authenticate_user(username: str, plain_password: str, db_session: Session) -
     )
   return user
   
-# -- Passive authentication (Access Token)
-def get_current_user(
-  access_token: Annotated[str, Depends(get_access_token_from_cookie)],
-  db_session: DatabaseSessionDep
-) -> User:
-  """
-  Get the current user from the access token.
-
-  :param access_token: The JWT access token to validate.
-  :param db_session: The database session to use for authentication.
-  :return: The authenticated user.
-  :raises HTTPException: If the user is not found.
-  """
-  payload = validate_access_token(access_token)
-  user_id = int(payload["sub"])
-  user = get_user_by_id(user_id=user_id, db_session=db_session)
-  if not user:
-    raise HTTPException(
-      status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Invalid authentication credentials: user not found"
-    )
-  return user
+# -- Passive authentication (JWT Access Token and Refresh Token)
+def get_current_user_with_refresh_fallback(
+    request: Request,
+    access_token: Annotated[str, Depends(get_access_token_from_cookie)],
+    db_session: DatabaseSessionDep
+):
+  try:
+    payload = validate_access_token(access_token)
+    user_id = int(payload["sub"])
+    user = get_user_by_id(user_id=user_id, db_session=db_session)
+    if not user:
+      raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid authentication credentials: user not found"
+      )
+    return user
+  except HTTPException:
+    try:
+      refresh_token = get_refresh_token_from_cookie(request)
+      payload = validate_refresh_token(refresh_token, db_session)
+      user_id = int(payload["sub"])
+      user = get_user_by_id(user_id=user_id, db_session=db_session)
+      if not user:
+        raise HTTPException(
+          status_code=status.HTTP_401_UNAUTHORIZED,
+          detail="Invalid authentication credentials: user not found"
+        )
+      return user
+    except:
+      raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated."
+      )

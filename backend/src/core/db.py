@@ -1,12 +1,14 @@
+# --- EXTERN IMPORTS ---
 from typing import Annotated
 from fastapi import Depends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase
 from sqlmodel import Session
 
+# --- INTERN IMPORTS ---
 from src.core.config import settings
 
-engine = create_engine(settings.database_url, echo=True) 
+engine = create_engine(settings.db_url, echo=True) 
 
 class Base(DeclarativeBase):
   pass
