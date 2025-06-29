@@ -14,7 +14,7 @@ from src.crud.refresh_token import insert_refresh_token, revoke_all_user_tokens,
 from src.models.refresh_token import RefreshToken
 
 router = APIRouter(
-  tags=["user"]
+  tags=["auth"]
 )
 
 @router.post(
@@ -55,29 +55,7 @@ async def login_user(
   set_refresh_token_in_cookie(response, refresh_token, refresh_token_expires)
   return {"message": "Login successfull"}
 
-# @router.post(
-#     path="/refresh/",
-#     status_code=status.HTTP_200_OK,
-# )
-# async def refresh_access_token(
-#   request: Request,
-#   response: Response,
-#   db_session: DatabaseSessionDep
-# ):
-#   refresh_token = get_refresh_token_from_cookie(request)
-#   payload = validate_refresh_token(refresh_token, db_session)
 
-#   user_id = int(payload["sub"])
-
-#   # --- CREATE NEW ACCESS TOKEN ---
-#   access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
-#   access_token = create_access_token(
-#     data={"sub": str(user_id)},
-#     expires_delta=access_token_expires
-#   )
-#   set_access_token_in_cookie(response, access_token, access_token_expires)
-
-#   return {"message": "Acess token refreshed successfully"}
 
 @router.get(
     path="/is_authorized/",
