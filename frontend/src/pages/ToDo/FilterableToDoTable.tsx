@@ -28,9 +28,9 @@ export default function FilterableTodoTable() {
   const updateTodoMutation = useUpdateTodo();
   const deleteTodMutation = useDeleteTodo();
 
+  // --- LOGOUT ---
   const { logout } = useAuth();
   const navigate = useNavigate();
-
   const handleLogout = async () => {
     try {
       await logout();
@@ -204,7 +204,6 @@ export default function FilterableTodoTable() {
     }
   };
   // --- END HANDLE TODO DELETE ---
-  // --- END REACT QUERY REPLACEMENT ---
 
   // --- BEGIN HANDLE TODO CREATE ---
   const handleTodoCreateOpen = () => {
@@ -321,7 +320,6 @@ export default function FilterableTodoTable() {
     }
   };
   // --- END HANDLE TODO CREATE ---
-  // END RAECT QUERY REPLACEMENT
 
   // --- HANDLE TODO UPDATE ---
   const handleTodoUpdateOpen = (editingId: number) => {

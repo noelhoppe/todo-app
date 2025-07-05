@@ -4,7 +4,7 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import * as Styles from "./Login.styles";
 import useAuth from "../../hooks/useAuth";
 import { useState } from "react";
-import { LoginRequest, Success } from "../../types/auth";
+import { LoginRequest } from "../../types/auth";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {

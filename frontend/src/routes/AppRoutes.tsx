@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import Login from "../pages/Login/Login";
 import ProtectedRoute from "./ProtectedRoutes";
-import FilterableTodoTable from "../pages/ToDo/FilterableToDoTable";
+import FilterableTodoTable from "../pages/ToDo/FilterableTodoTable";
 import Register from "../pages/Register/Register";
 
 export default function AppRoutes() {
