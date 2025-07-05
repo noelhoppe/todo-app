@@ -32,6 +32,16 @@ const queryClient = new QueryClient({
   }
 });
 
+// Connect Your App
+// To use TanStack Query DevTools, add this code to your application where you create your QueryClient:
+declare global {
+  interface Window {
+    __TANSTACK_QUERY_CLIENT__: 
+      import("@tanstack/query-core").QueryClient;
+  }
+}
+window.__TANSTACK_QUERY_CLIENT__ = queryClient;
+
 function App() {
   return (
     <>
