@@ -8,6 +8,8 @@ export const ModalContainer = styled.div`
   height: 100%;
   z-index: 999;
   background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
 `;
 
 export const ModalContent = styled.div`
