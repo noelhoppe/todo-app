@@ -11,9 +11,8 @@ import { BrowserRouter } from "react-router";
 import AppRoutes from "./routes/AppRoutes";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
-// logging API URL environment variable
-// console.log(import.meta.env.VITE_API_URL)
+import { QueryClient } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 
 export const theme = createTheme({
   palette: {
@@ -24,19 +23,30 @@ export const theme = createTheme({
   },
 });
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5*60*1000, // = 5 minutes 
+      retry: 1, // Retry failed queries once
+    }
+  }
+});
+
 function App() {
   return (
     <>
-      <ThemeProvider theme={theme}>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <BrowserRouter>
-            <AuthProvider>
-              <CssBaseline />
-              <AppRoutes />
-            </AuthProvider>
-          </BrowserRouter>
-        </LocalizationProvider>
-      </ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider theme={theme}>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <BrowserRouter>
+              <AuthProvider>
+                <CssBaseline />
+                <AppRoutes />
+              </AuthProvider>
+            </BrowserRouter>
+          </LocalizationProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
     </>
   );
 }
