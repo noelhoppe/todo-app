@@ -1,4 +1,3 @@
-import Login from "./pages/Login/Login";
 import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material";
 import { createTheme } from "@mui/material";
@@ -23,7 +22,7 @@ export const theme = createTheme({
   },
 });
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5*60*1000, // = 5 minutes 
@@ -32,7 +31,7 @@ const queryClient = new QueryClient({
   }
 });
 
-// Connect Your App
+// Connect Your TanStack Query DevTools to your application
 // To use TanStack Query DevTools, add this code to your application where you create your QueryClient:
 declare global {
   interface Window {
