@@ -3,7 +3,6 @@ import { fetchIsAuthorized, fetchLogin, fetchLogout } from "../services/auth";
 import type {
   AuthContext as AuthContextType,
   LoginRequest,
-  LoginResponse,
   Success,
 } from "../types/auth";
 

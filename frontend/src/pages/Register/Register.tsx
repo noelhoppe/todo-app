@@ -2,11 +2,11 @@ import { Button, IconButton, TextField, Typography } from "@mui/material";
 import * as Styles from "./Register.styles";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
-import { use, useState } from "react";
+import { useState } from "react";
 import { RegisterRequest } from "../../types/auth";
 import { fetchRegister } from "../../services/auth";
 import useAuth from "../../hooks/useAuth";
-import { replace, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function Register() {
   const [credentials, setCredentials] = useState<RegisterRequest>({

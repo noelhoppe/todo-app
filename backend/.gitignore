@@ -31,7 +31,3 @@ env/
 # Temporäre Dateien von Texteditoren
 *~
 *.swp
-
-# Migrationen oder alembic (optional)
-alembic.ini
-migrations/

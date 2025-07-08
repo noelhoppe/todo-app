@@ -1,8 +1,11 @@
+# --- EXTERN IMPORTS ---
 from fastapi import HTTPException, status
 from sqlalchemy import and_, select
 from sqlmodel import Session
+
+# --- INTERN IMPORTS ---
 from src.models.todo import ToDo as ToDoModel
-from src.schemas.todo import ToDoIn, ToDoOut
+from src.schemas.todo import ToDoIn
 
 def insert_todo(todo: ToDoIn, user_id: int, db_session: Session) -> ToDoModel:
   new_todo = ToDoModel(

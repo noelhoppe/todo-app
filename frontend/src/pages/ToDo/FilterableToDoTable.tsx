@@ -2,20 +2,13 @@ import {
   DataGrid,
   GridColDef,
   GridRenderCellParams,
-  GridValueFormatter,
 } from "@mui/x-data-grid";
 import utc from "dayjs/plugin/utc";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button, IconButton, Stack, Typography } from "@mui/material";
 import FilterBar from "./FilterBar";
 import EditIcon from "@mui/icons-material/Edit";
-import {
-  fetchDeleteTodo,
-  fetchGetTodos,
-  fetchPatchTodo,
-  fetchPostTodos,
-} from "../../services/todo";
-import { TodoItemRequest, TodoItemResponse } from "../../types/todo";
+import { TodoItemRequest } from "../../types/todo";
 import SuccessSnackbar from "../../components/SuccessSnackbar";
 import { PickerValue } from "@mui/x-date-pickers/internals";
 import dayjs from "dayjs";
@@ -23,22 +16,29 @@ import TodoModal from "./TodoModal";
 import DeleteButtonWithConfirm from "./DeleteButtonWithConfirm";
 import useAuth from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { useTodoQuery } from "../../hooks/useTodoQuery";
+import { useCreateTodo, useDeleteTodo, useUpdateTodo } from "../../hooks/useTodoMutations";
 
 dayjs.extend(utc);
 
 export default function FilterableTodoTable() {
+  // --- CRUD OPERATIONS ---
+  const { data: todos = []} = useTodoQuery()
+  const createTodoMutation = useCreateTodo();
+  const updateTodoMutation = useUpdateTodo();
+  const deleteTodMutation = useDeleteTodo();
+
+  // --- LOGOUT ---
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const handleLogout = async() => {
+  const handleLogout = async () => {
     try {
       await logout();
       navigate("/login/", { replace: true });
     } catch (error) {
       console.error("Error during logout:", error);
     }
-  }
-
-  const [rows, setRows] = useState<TodoItemResponse[]>([]);
+  };
 
   // --- FOR CREATING AND UPDATING TODOS ---
   const [todo, setTodo] = useState<TodoItemRequest>({
@@ -48,21 +48,22 @@ export default function FilterableTodoTable() {
   });
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  // --- FILTER STATES ---
+  // --- UI-FILTER STATES ---
   const [statusFilter, setStatusFilter] = useState<"all" | "open" | "done">(
     "all"
   );
   const [titleFilter, setTitleFilter] = useState<string>("");
 
-  // --- FOR ERROR HANDLING ---
-  // --- MODAL STATES ---
+  // --- UI-ERROR HANDLING ---
   const [errorMessage, setErrorMessage] = useState({
     title: "",
     due_to: "",
   });
+  // --- UI-MODAL HANDLING ---
   const [modalOpen, setModalOpen] = useState<
     "create" | "update" | "delete" | null
   >(null);
+  // --- UI-SUCCESSBAR HANDLING ---
   const [successOpen, setSucccessOpen] = useState<
     "create" | "update" | "delete" | null
   >(null);
@@ -171,18 +172,6 @@ export default function FilterableTodoTable() {
     },
   ];
 
-  useEffect(() => {
-    const fetchTodos = async () => {
-      try {
-        const todos: TodoItemResponse[] = await fetchGetTodos();
-        setRows(todos);
-      } catch (error) {
-        console.log("Error fetching todos:", error);
-      }
-    };
-    fetchTodos();
-  }, []);
-
   // --- BEGIN HANDLE TODO DELETE ---
   const handleTodoDeleteOpen = (editingId: number) => {
     setEditingId(editingId);
@@ -199,9 +188,14 @@ export default function FilterableTodoTable() {
       throw new Error("No todo ID provided for deletion (DELETE /todos/:id)");
     }
     try {
-      await fetchDeleteTodo(editingId);
-      const rows = await fetchGetTodos();
-      setRows(rows);
+
+      // await fetchDeleteTodo(editingId);
+      // const rows = await fetchGetTodos();
+      // setRows(rows);
+
+      // --- REPLACEMENT WITH REACT QUERY ---
+      deleteTodMutation.mutate(editingId)
+
       setEditingId(null);
       setModalOpen(null);
       setSucccessOpen("delete");
@@ -303,9 +297,13 @@ export default function FilterableTodoTable() {
     }
     // send the request to the server
     try {
-      await fetchPostTodos(todo);
-      const todos = await fetchGetTodos();
-      setRows(todos);
+      // await fetchPostTodos(todo);
+      // const todos = await fetchGetTodos();
+      // setRows(todos);
+
+      // --- REPLACEMENT WITH REACT QUERY ---
+      createTodoMutation.mutate(todo)
+    
       setSucccessOpen("create");
       setModalOpen(null); // close the modal after successful creation
       setTodo({
@@ -327,7 +325,7 @@ export default function FilterableTodoTable() {
   const handleTodoUpdateOpen = (editingId: number) => {
     setEditingId(editingId);
     setTodo(
-      rows.find((row) => row.id === editingId) || {
+      todos.find((todo) => todo.id === editingId) || {
         title: "",
         due_to: null,
         is_done: false,
@@ -361,9 +359,16 @@ export default function FilterableTodoTable() {
       return;
     }
     try {
-      await fetchPatchTodo(editingId, todo);
-      const todos = await fetchGetTodos();
-      setRows(todos);
+      // await fetchPatchTodo(editingId, todo);
+      // const todos = await fetchGetTodos();
+      // setRows(todos);
+
+      // --- REPLACEMENT WITH REACT QUERY ---
+      updateTodoMutation.mutate({
+        id: editingId,
+        todo
+      })
+
       setSucccessOpen("update");
       setModalOpen(null);
     } catch (error) {
@@ -394,16 +399,16 @@ export default function FilterableTodoTable() {
   };
 
   // -- BEGIN HANDLE TODO FILTERING BY STATUS AND TITLE ---
-  const filteredRows = rows
-    .filter((row) => {
+  const filteredRows = todos
+    .filter((todo) => {
       // filter by status
       switch (statusFilter) {
         case "all":
           return true;
         case "done":
-          return row.is_done === true;
+          return todo.is_done === true;
         case "open":
-          return row.is_done === false;
+          return todo.is_done === false;
         default:
           return true;
       }
@@ -466,11 +471,7 @@ export default function FilterableTodoTable() {
           >
             Create Todo
           </Button>
-          <Button
-            variant="outlined"
-            color="secondary"
-            onClick={handleLogout}
-          >
+          <Button variant="outlined" color="secondary" onClick={handleLogout}>
             Logout
           </Button>
         </Stack>

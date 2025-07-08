@@ -1,9 +1,11 @@
+# --- EXTERN IMPORTS ---
 from fastapi import status
 from fastapi.routing import APIRouter
 
+# --- INTERN IMPORTS ---
 from src.core.db import DatabaseSessionDep
 from src.schemas.todo import ToDoIn, ToDoOut, ToDoUpdate
-from src.core.dependencies import GetCurrentUser
+from src.core.dependencies import GetCurrentUserWithRefresh
 from src.crud.todo import delete_todo_in_db, get_todos, insert_todo, update_todo_in_db
 
 router = APIRouter(
@@ -15,7 +17,7 @@ router = APIRouter(
   path="/",
   status_code=status.HTTP_201_CREATED
 )
-async def create_todo(todo: ToDoIn, user: GetCurrentUser, db_session: DatabaseSessionDep):
+async def create_todo(todo: ToDoIn, user: GetCurrentUserWithRefresh, db_session: DatabaseSessionDep):
   todo_model = insert_todo(todo, user.id, db_session)
   return ToDoOut.model_validate(todo_model, from_attributes=True)
 
@@ -23,7 +25,7 @@ async def create_todo(todo: ToDoIn, user: GetCurrentUser, db_session: DatabaseSe
     path="/",
     status_code=status.HTTP_200_OK
 )
-async def read_todos(user: GetCurrentUser, db_session: DatabaseSessionDep) -> list[ToDoOut]:  
+async def read_todos(user: GetCurrentUserWithRefresh, db_session: DatabaseSessionDep) -> list[ToDoOut]:  
   todo_models = get_todos(user.id, db_session)
   return [ToDoOut.model_validate(todo_model, from_attributes=True) for todo_model in todo_models]
 
@@ -32,7 +34,7 @@ async def read_todos(user: GetCurrentUser, db_session: DatabaseSessionDep) -> li
   status_code=status.HTTP_200_OK
 )
 async def update_todo(
-  user: GetCurrentUser,
+  user: GetCurrentUserWithRefresh,
   dbSession: DatabaseSessionDep,
   todo_id: int,
   todo: ToDoUpdate
@@ -50,7 +52,7 @@ async def update_todo(
   status_code=status.HTTP_204_NO_CONTENT
 )
 async def delete_todo(
-  user: GetCurrentUser,
+  user: GetCurrentUserWithRefresh,
   dbSession: DatabaseSessionDep,
   todo_id: int
 ):
