@@ -210,7 +210,8 @@ def set_access_token_in_cookie(
     value=token,
     httponly=True, # prevents reading or manipulating cookie using document.cookie with javascript in frontend to avoid XSS-attacks
     # note: use secure=True in production environment to ensure that the cookie is only send via https to avoid MITM-attacks
-    samesite="strict", # cookie is sent only to same domain that sets cookie to avoid CSRF-attacks
+    secure=True,
+    samesite="none", # cookie is sent only to same domain that sets cookie to avoid CSRF-attacks
     max_age=int(expire_delta.total_seconds())
   )
 
@@ -256,7 +257,8 @@ def set_refresh_token_in_cookie(
     value=token,
     httponly=True,  # prevents reading or manipulating cookie using document.cookie with javascript in frontend to avoid XSS-attacks
     # note: use secure=True in production environment to ensure that the cookie is only send via https to avoid MITM-attacks
-    samesite="strict",  # cookie is sent only to same domain that sets cookie to avoid CSRF-attacks
+    secure=True,
+    samesite="none",  # cookie is sent only to same domain that sets cookie to avoid CSRF-attacks
     max_age=int(expires_delta.total_seconds())
   )
 
