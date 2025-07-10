@@ -12,6 +12,8 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
+import ServerWakeupIndicator from "./components/ServerWakeupIndicator";
+import { useEffect, useState } from "react";
 
 export const theme = createTheme({
   palette: {
@@ -25,23 +27,56 @@ export const theme = createTheme({
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5*60*1000, // = 5 minutes 
+      staleTime: 5 * 60 * 1000, // = 5 minutes
       retry: 1, // Retry failed queries once
-    }
-  }
+    },
+  },
 });
 
 // Connect Your TanStack Query DevTools to your application
 // To use TanStack Query DevTools, add this code to your application where you create your QueryClient:
 declare global {
   interface Window {
-    __TANSTACK_QUERY_CLIENT__: 
-      import("@tanstack/query-core").QueryClient;
+    __TANSTACK_QUERY_CLIENT__: import("@tanstack/query-core").QueryClient;
   }
 }
 window.__TANSTACK_QUERY_CLIENT__ = queryClient;
 
 function App() {
+  const [serverReady, setServerReady] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const ping = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/docs/`, {
+          method: "GET",
+        });
+        if (res.ok && isMounted) {
+          setServerReady(true);
+        } else if (isMounted) {
+          setServerReady(false)
+        }
+      } catch {
+        if (isMounted) {
+          setServerReady(false);
+        }
+      }
+    };
+
+    ping()
+
+    const interval = setInterval(() => {
+        ping()
+    }, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    }
+  }, []);
+
   return (
     <>
       <QueryClientProvider client={queryClient}>
@@ -51,6 +86,7 @@ function App() {
               <AuthProvider>
                 <CssBaseline />
                 <AppRoutes />
+                {!serverReady && <ServerWakeupIndicator />}
               </AuthProvider>
             </BrowserRouter>
           </LocalizationProvider>
